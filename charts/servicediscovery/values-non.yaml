@@ -1,0 +1,46 @@
+revisionHistoryLimit: 1
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: servicediscovery.non.jdwkube.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - servicediscovery.non.jdwkube.com
+      secretName: servicediscovery-non-tls
+
+serviceDiscovery:
+  routeRemotes:
+    - path: auth
+      name: authui
+      id: authui/Routes
+      entry: https://authui.non.jdwkube.com/mf-manifest.json
+    - path: users
+      name: usersui
+      id: usersui/Routes
+      entry: https://usersui.non.jdwkube.com/mf-manifest.json
+    - path: roles
+      name: rolesui
+      id: rolesui/Routes
+      entry: https://rolesui.non.jdwkube.com/mf-manifest.json
+  componentRemotes:
+    - name: AuthWidgetComponent
+      id: authui/AuthWidget
+      entry: https://authui.non.jdwkube.com/mf-manifest.json
+  navigationItems:
+    - path: auth
+      icon: login
+      title: Auth
+      description: This contains sign in and sign up functionality
+    - path: users
+      icon: groups
+      title: Users
+      description: This contains viewing users and managing profiles functionality
+    - path: roles
+      icon: lock
+      title: Roles
+      description: This contains viewing and managing roles functionality

@@ -1,0 +1,120 @@
+replicaCount: 0
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+revisionHistoryLimit: 2
+
+image:
+  repository: jdwillmsen/jdw-servicediscovery
+  pullPolicy: IfNotPresent
+  tag: ""
+imagePullSecrets: []
+nameOverride: ""
+
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+  automount: true
+  annotations: {}
+  name: ""
+podAnnotations: {}
+
+podLabels: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 9000
+  targetPort: 9000
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: ss-clusterissuer
+  hosts:
+    - host: servicediscovery.default.jdwkube.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - servicediscovery.default.jdwkube.com
+      secretName: servicediscovery-default-tls
+
+resources:
+  requests:
+    memory: "32Mi"
+    cpu: "10m"
+  limits:
+    memory: "64Mi"
+    cpu: "50m"
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+volumes:
+  - name: config-volume
+    configMap:
+      name: servicediscovery-config
+
+volumeMounts:
+  - name: config-volume
+    mountPath: /app/config
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+externalSecrets: []
+
+envs:
+  SD_PORT: 9000
+  SD_CONFIG_PATH: /app/config/config.json
+
+envSecrets: []
+
+serviceDiscovery:
+  remotes:
+    authui: https://authui.default.jdwkube.com
+    usersui: https://usersui.default.jdwkube.com
+  microFrontends:
+    - name: authui
+      path: auth
+      remoteName: authui
+      moduleName: ./Routes
+      url: https://authui.default.jdwkube.com
+      icon: login
+      title: Auth
+      description: This contains sign in and sign up functionality
+    - name: usersui
+      path: users
+      remoteName: usersui
+      moduleName: ./Routes
+      url: https://usersui.default.jdwkube.com
+      icon: groups
+      title: Users
+      description: This contains viewing users and managing profiles functionality

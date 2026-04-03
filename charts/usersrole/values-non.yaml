@@ -1,0 +1,48 @@
+revisionHistoryLimit: 1
+
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "500m"
+  limits:
+    memory: "2Gi"
+    cpu: "1"
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: usersrole.non.jdwkube.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - usersrole.non.jdwkube.com
+      secretName: usersrole-non-tls
+
+externalSecrets:
+  - refreshInterval: 1m
+    secretStoreName: k8s-secret-store
+    secretName: usersrole-pg-non
+  - refreshInterval: 1m
+    secretStoreName: vault-secret-store
+    secretName: usersrole-non
+
+envs:
+  UR_PG_DATASOURCE_URL: jdbc:postgresql://postgresql-cluster-non-rw.database:5432/jdw_non
+  UR_JWT_EXPIRATION_TIME_MS: "7200000"
+
+envSecrets:
+  - secretKey: UR_PG_USERNAME
+    key: postgresql-cluster-non-app
+    property: username
+    secretName: usersrole-pg-non
+  - secretKey: UR_PG_PASSWORD
+    key: postgresql-cluster-non-app
+    property: password
+    secretName: usersrole-pg-non
+  - secretKey: UR_JWT_SECRET_KEY
+    key: usersrole
+    property: jwt_key_non
+    secretName: usersrole-non

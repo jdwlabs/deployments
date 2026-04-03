@@ -1,0 +1,57 @@
+apps:
+  # --- NON environment ---
+  - appName: secret-store-non
+    namespace: jdwlabs-non
+    chartPath: charts/secret-store
+    syncWave: "0"
+    values:
+      - values.yaml
+      - values-non.yaml
+
+  - appName: usersrole-non
+    namespace: jdwlabs-non
+    chartPath: charts/usersrole
+    syncWave: "1"
+    values:
+      - values.yaml
+      - values-non.yaml
+
+  - appName: servicediscovery-non
+    namespace: jdwlabs-non
+    chartPath: charts/servicediscovery
+    syncWave: "1"
+    values:
+      - values.yaml
+      - values-non.yaml
+
+  - appName: container-non
+    namespace: jdwlabs-non
+    chartPath: charts/container
+    syncWave: "1"
+    values:
+      - values.yaml
+      - values-non.yaml
+
+  - appName: authui-non
+    namespace: jdwlabs-non
+    chartPath: charts/authui
+    syncWave: "1"
+    values:
+      - values.yaml
+      - values-non.yaml
+
+  - appName: usersui-non
+    namespace: jdwlabs-non
+    chartPath: charts/usersui
+    syncWave: "1"
+    values:
+      - values.yaml
+      - values-non.yaml
+
+  - appName: rolesui-non
+    namespace: jdwlabs-non
+    chartPath: charts/rolesui
+    syncWave: "1"
+    values:
+      - values.yaml
+      - values-non.yaml

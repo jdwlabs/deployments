@@ -1,0 +1,27 @@
+image:
+  tag: "0.5.4"
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: rolesui.prd.jdwkube.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - rolesui.prd.jdwkube.com
+      secretName: rolesui-prd-tls
+
+envs:
+  ENVIRONMENT: prod
+  AUTH_BASE_URL: https://usersrole.prd.jdwkube.com

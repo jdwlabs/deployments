@@ -1,0 +1,28 @@
+image:
+  tag: "1.4.1"
+
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: container.prd.jdwkube.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - container.prd.jdwkube.com
+      secretName: container-prd-tls
+
+envs:
+  ENVIRONMENT: prod
+  AUTH_BASE_URL: https://usersrole.prd.jdwkube.com
+  SERVICE_DISCOVERY_BASE_URL: https://servicediscovery.prd.jdwkube.com

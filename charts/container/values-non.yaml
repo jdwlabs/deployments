@@ -1,0 +1,19 @@
+revisionHistoryLimit: 1
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: container.non.jdwkube.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - container.non.jdwkube.com
+      secretName: container-non-tls
+
+envs:
+  ENVIRONMENT: non
+  AUTH_BASE_URL: https://usersrole.non.jdwkube.com
+  SERVICE_DISCOVERY_BASE_URL: https://servicediscovery.non.jdwkube.com
