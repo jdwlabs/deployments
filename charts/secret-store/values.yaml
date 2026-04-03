@@ -1,4 +1,4 @@
-env: dev
+env: jdwlabs-dev
 serviceAccount:
   create: true
   automount: true
