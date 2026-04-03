@@ -1,0 +1,111 @@
+replicaCount: 0
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+revisionHistoryLimit: 2
+
+image:
+  repository: jdwillmsen/jdw-usersrole
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: ss-clusterissuer
+  hosts:
+    - host: usersrole.default.jdwkube.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - usersrole.default.jdwkube.com
+      secretName: usersrole-default-tls
+
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "500m"
+  limits:
+    memory: "1Gi"
+    cpu: "1"
+
+livenessProbe:
+  httpGet:
+    path: /actuator/health/liveness
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+readinessProbe:
+  httpGet:
+    path: /actuator/health/readiness
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+volumes: []
+
+volumeMounts: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+externalSecrets:
+  - refreshInterval: 1m
+    secretStoreName: k8s-secret-store
+    secretName: postgresql-cluster-non-app
+  - refreshInterval: 1m
+    secretStoreName: vault-secret-store
+    secretName: usersrole
+
+envs:
+  UR_PG_DATASOURCE_URL: jdbc:postgresql://postgresql-cluster-non-rw.database:5432/jdw_dev
+  UR_JWT_EXPIRATION_TIME_MS: "7200000"
+#  JAVA_OPTS: "-XX:+UseContainerSupport -Xms512m -Xmx1g"
+
+envSecrets:
+  - secretKey: UR_PG_USERNAME
+    key: postgresql-cluster-non-app
+    property: username
+    secretName: postgresql-cluster-non-app
+  - secretKey: UR_PG_PASSWORD
+    key: postgresql-cluster-non-app
+    property: password
+    secretName: postgresql-cluster-non-app
+  - secretKey: UR_JWT_SECRET_KEY
+    key: usersrole
+    property: jwt_key_dev
+    secretName: usersrole

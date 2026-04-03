@@ -1,0 +1,18 @@
+revisionHistoryLimit: 1
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: authui.uat.jdwkube.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - authui.uat.jdwkube.com
+      secretName: authui-uat-tls
+
+envs:
+  ENVIRONMENT: uat
+  AUTH_BASE_URL: https://usersrole.uat.jdwkube.com

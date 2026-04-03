@@ -1,0 +1,57 @@
+apps:
+  # --- PRD environment ---
+  - appName: secret-store-prd
+    namespace: jdwlabs-prd
+    chartPath: charts/secret-store
+    syncWave: "0"
+    values:
+      - values.yaml
+      - values-prd.yaml
+
+  - appName: usersrole-prd
+    namespace: jdwlabs-prd
+    chartPath: charts/usersrole
+    syncWave: "1"
+    values:
+      - values.yaml
+      - values-prd.yaml
+
+  - appName: servicediscovery-prd
+    namespace: jdwlabs-prd
+    chartPath: charts/servicediscovery
+    syncWave: "1"
+    values:
+      - values.yaml
+      - values-prd.yaml
+
+  - appName: container-prd
+    namespace: jdwlabs-prd
+    chartPath: charts/container
+    syncWave: "1"
+    values:
+      - values.yaml
+      - values-prd.yaml
+
+  - appName: authui-prd
+    namespace: jdwlabs-prd
+    chartPath: charts/authui
+    syncWave: "1"
+    values:
+      - values.yaml
+      - values-prd.yaml
+
+  - appName: usersui-prd
+    namespace: jdwlabs-prd
+    chartPath: charts/usersui
+    syncWave: "1"
+    values:
+      - values.yaml
+      - values-prd.yaml
+
+  - appName: rolesui-prd
+    namespace: jdwlabs-prd
+    chartPath: charts/rolesui
+    syncWave: "1"
+    values:
+      - values.yaml
+      - values-prd.yaml

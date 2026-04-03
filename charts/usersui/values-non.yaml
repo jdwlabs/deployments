@@ -1,0 +1,18 @@
+revisionHistoryLimit: 1
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: usersui.non.jdwkube.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - usersui.non.jdwkube.com
+      secretName: usersui-non-tls
+
+envs:
+  ENVIRONMENT: non
+  AUTH_BASE_URL: https://usersrole.non.jdwkube.com

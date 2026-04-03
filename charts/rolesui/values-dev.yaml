@@ -1,0 +1,21 @@
+image:
+  tag: ""
+
+revisionHistoryLimit: 1
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: rolesui.dev.jdwkube.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - rolesui.dev.jdwkube.com
+      secretName: rolesui-dev-tls
+
+envs:
+  ENVIRONMENT: dev
+  AUTH_BASE_URL: https://usersrole.dev.jdwkube.com

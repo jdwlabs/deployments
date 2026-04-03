@@ -1,0 +1,49 @@
+image:
+  tag: "0.10.14"
+
+resources:
+  requests:
+    memory: "1Gi"
+    cpu: "500m"
+  limits:
+    memory: "2Gi"
+    cpu: "1"
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: usersrole.prd.jdwkube.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - usersrole.prd.jdwkube.com
+      secretName: usersrole-prd-tls
+
+externalSecrets:
+  - refreshInterval: 1m
+    secretStoreName: k8s-secret-store
+    secretName: usersrole-pg-prd
+  - refreshInterval: 1m
+    secretStoreName: vault-secret-store
+    secretName: usersrole-prd
+
+envs:
+  UR_PG_DATASOURCE_URL: jdbc:postgresql://postgresql-cluster-prd-rw.database:5432/jdw_prd
+  UR_JWT_EXPIRATION_TIME_MS: "7200000"
+
+envSecrets:
+  - secretKey: UR_PG_USERNAME
+    key: postgresql-cluster-prd-app
+    property: username
+    secretName: usersrole-pg-prd
+  - secretKey: UR_PG_PASSWORD
+    key: postgresql-cluster-prd-app
+    property: password
+    secretName: usersrole-pg-prd
+  - secretKey: UR_JWT_SECRET_KEY
+    key: usersrole
+    property: jwt_key_prd
+    secretName: usersrole-prd
