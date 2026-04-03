@@ -5,7 +5,7 @@
 [![Prod Version](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fjdwlabs%2Fdeployments%2Frefs%2Fheads%2Fmain%2Fcharts%2Frolesui%2Fvalues-prd.yaml&query=%24.image.tag&prefix=v&label=Prod)](https://github.com/jdwlabs/deployments/blob/main/charts/rolesui/values-prd.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This Helm chart is used to deploy the `rolesui` frontend in the JDW platform. It’s primarily consumed by Argo CD for
+This Helm chart is used to deploy the `rolesui` frontend in the JDW platform. It's primarily consumed by Argo CD for
 GitOps-based deployments across environments.
 
 ## Layout
