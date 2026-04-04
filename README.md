@@ -1,5 +1,8 @@
 # jdwlabs/deployments
 
+[![CI](https://github.com/jdwlabs/deployments/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/jdwlabs/deployments/actions/workflows/ci.yaml)
+[![Release](https://github.com/jdwlabs/deployments/actions/workflows/release.yaml/badge.svg?branch=main)](https://github.com/jdwlabs/deployments/actions/workflows/release.yaml)
+
 GitOps deployment repository for the `jdwlabs` tenant on the Jdwlabs platform. ArgoCD reads this repo via the
 `jdwlabs-deployments` ApplicationSet to deploy applications into tenant-owned namespaces.
 
