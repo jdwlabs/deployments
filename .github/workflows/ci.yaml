@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5
+
+      - name: Lint charts
+        run: |
+          for chart in charts/*/; do
+            echo "linting $chart..."
+            helm lint "$chart"
+          done
+
+  template:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5
+
+      - name: Template charts with each environment values
+        run: |
+          for chart in charts/*/; do
+            name=$(basename "$chart")
+            for env in non prd; do
+              values_file="$chart/values-${env}.yaml"
+              if [ -f "$values_file" ]; then
+                echo "Templating $name ($env)..."
+                helm template "$name" "$chart" -f "$chart/values.yaml" -f "$values_file" > /dev/null
+              fi
+            done
+          done
+
+  validate-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate ArgoCD config files
+        run: |
+          exit_code=0
+          for config in argocd/*/config.yaml; do
+            env=$(basename "$(dirname "$config")")
+            echo "Validating $config..."
+          
+            # Check required fields exist for each app entry
+            apps=$(yq '.apps | length' "$config")
+            for i in $(seq 0 $(( apps - 1))); do
+              name=$(yq '.apps[$i].name" "$config")
+              ns=$(yq ".apps[$i].namespace" "$config")
+              chart_path=$(yq ".apps[$i].chartPath" "$config")
+          
+              if [ "$name" = "null" ] || [ -z "$name" ]; then
+                echo "  ERROR: apps[$i] missing 'name'"
+                exit_code=1
+              fi
+          
+              if [ "$ns" = "null" ] || [ -z "$ns" ]; then
+                echo "  ERROR: apps[$i] ($name) missing 'namespace'"
+                exit_code=1
+              fi
+          
+              if [ "$chart_path" = "null" ] || [ -z "$chart_path" ]; then
+                echo "  ERROR: apps[$i] ($name) missing 'chartPath'"
+                exit_code=1
+              elif [ ! -d "$chart_path" ]; then
+                echo "  ERROR: apps[$i] ($name) chartPath '$chart_path' does not exist"
+                exit_code=1
+              fi
+          
+              # Check that referenced value files exist
+              value_files=$(yq ".apps[$i].valueFiles | length" "$config")
+              for j in $(seq 0 $(( value_files - 1 ))); do
+                vf=$(yq ".apps[$i].valueFiles[$j]" "$config")
+                if [ ! -f "$chart_path/$vf" ]; then
+                  echo "  ERROR: apps[$i] ($name) valueFile '$chart_path/$vf' does not exist"
+                  exit_code=1
+                fi
+              done
+            done
+          
+            echo "  $apps apps validated"
+            done
+            exit $exit_code
