@@ -60,24 +60,24 @@ jobs:
           for config in argocd/*/config.yaml; do
             env=$(basename "$(dirname "$config")")
             echo "Validating $config..."
-          
+
             # Check required fields exist for each app entry
             apps=$(yq '.apps | length' "$config")
             for i in $(seq 0 $(( apps - 1))); do
-              name=$(yq '.apps[$i].name" "$config")
+              name=$(yq ".apps[$i].name" "$config")
               ns=$(yq ".apps[$i].namespace" "$config")
               chart_path=$(yq ".apps[$i].chartPath" "$config")
-          
+
               if [ "$name" = "null" ] || [ -z "$name" ]; then
                 echo "  ERROR: apps[$i] missing 'name'"
                 exit_code=1
               fi
-          
+
               if [ "$ns" = "null" ] || [ -z "$ns" ]; then
                 echo "  ERROR: apps[$i] ($name) missing 'namespace'"
                 exit_code=1
               fi
-          
+
               if [ "$chart_path" = "null" ] || [ -z "$chart_path" ]; then
                 echo "  ERROR: apps[$i] ($name) missing 'chartPath'"
                 exit_code=1
@@ -85,7 +85,7 @@ jobs:
                 echo "  ERROR: apps[$i] ($name) chartPath '$chart_path' does not exist"
                 exit_code=1
               fi
-          
+
               # Check that referenced value files exist
               value_files=$(yq ".apps[$i].valueFiles | length" "$config")
               for j in $(seq 0 $(( value_files - 1 ))); do
@@ -96,7 +96,7 @@ jobs:
                 fi
               done
             done
-          
+
             echo "  $apps apps validated"
-            done
-            exit $exit_code
+          done
+          exit $exit_code
