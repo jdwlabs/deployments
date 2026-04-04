@@ -1,0 +1,80 @@
+apiVersion: v1
+entries:
+  authui:
+  - apiVersion: v2
+    appVersion: 2.0.1
+    created: "2026-04-04T04:02:18.304332475Z"
+    description: A Helm chart for Kubernetes
+    digest: 6da4264f20358a3461c147de8aeb130dae29f61ee185f9f7f3022e94014cfa33
+    name: authui
+    type: application
+    urls:
+    - https://github.com/jdwlabs/deployments/releases/download/authui-2.0.1/authui-2.0.1.tgz
+    version: 2.0.1
+  container:
+  - apiVersion: v2
+    appVersion: 1.4.1
+    created: "2026-04-04T04:02:18.41762557Z"
+    description: A Helm chart for Kubernetes
+    digest: e32c93733a1667cb383ef581f723e2c77a82d0dff2b900dc43e79cd790b60a5a
+    name: container
+    type: application
+    urls:
+    - https://github.com/jdwlabs/deployments/releases/download/container-1.4.1/container-1.4.1.tgz
+    version: 1.4.1
+  rolesui:
+  - apiVersion: v2
+    appVersion: 0.5.4
+    created: "2026-04-04T04:02:18.561868128Z"
+    description: A Helm chart for Kubernetes
+    digest: ae05ffad83f6d0ef1d7ffc701403964ba02978d9265abddbfe69066055c5ae21
+    name: rolesui
+    type: application
+    urls:
+    - https://github.com/jdwlabs/deployments/releases/download/rolesui-0.5.4/rolesui-0.5.4.tgz
+    version: 0.5.4
+  secret-store:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2026-04-04T04:02:18.668130431Z"
+    description: A Helm chart for Kubernetes
+    digest: 50a6b7daab610070cce62eddf7bd6c3f3540c7b10f8a47e4c44a46077e698dc8
+    name: secret-store
+    type: application
+    urls:
+    - https://github.com/jdwlabs/deployments/releases/download/secret-store-0.1.0/secret-store-0.1.0.tgz
+    version: 0.1.0
+  servicediscovery:
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2026-04-04T04:02:18.785612033Z"
+    description: A Helm chart for Kubernetes
+    digest: f30c818a64e02777297cc90b4c3290e285b0060135338bff83f392e9dd73d6b1
+    name: servicediscovery
+    type: application
+    urls:
+    - https://github.com/jdwlabs/deployments/releases/download/servicediscovery-1.0.0/servicediscovery-1.0.0.tgz
+    version: 1.0.0
+  usersrole:
+  - apiVersion: v2
+    appVersion: 0.10.14
+    created: "2026-04-04T04:02:18.900465566Z"
+    description: A Helm chart for Kubernetes
+    digest: afbeae1de7ff72572ac5ff3e6da4ae31126a02cc322a135d64bc66e52dae427b
+    name: usersrole
+    type: application
+    urls:
+    - https://github.com/jdwlabs/deployments/releases/download/usersrole-0.10.14/usersrole-0.10.14.tgz
+    version: 0.10.14
+  usersui:
+  - apiVersion: v2
+    appVersion: 1.3.5
+    created: "2026-04-04T04:02:19.015687562Z"
+    description: A Helm chart for Kubernetes
+    digest: 5e91855cd54afe089140695f91577abf3ac544f697b79caa6fab450ef4af7055
+    name: usersui
+    type: application
+    urls:
+    - https://github.com/jdwlabs/deployments/releases/download/usersui-1.3.5/usersui-1.3.5.tgz
+    version: 1.3.5
+generated: "2026-04-04T04:02:19.015694916Z"
