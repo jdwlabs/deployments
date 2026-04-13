@@ -27,7 +27,7 @@ externalSecrets:
     secretStoreName: k8s-secret-store
     secretName: usersrole-pg-prd
   - refreshInterval: 1m
-    secretStoreName: vault-secret-store
+    secretStoreName: vault
     secretName: usersrole-prd
 
 envs:

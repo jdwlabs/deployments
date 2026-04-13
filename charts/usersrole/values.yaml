@@ -88,7 +88,7 @@ externalSecrets:
     secretStoreName: k8s-secret-store
     secretName: platform-postgresql-cluster-non-app
   - refreshInterval: 1m
-    secretStoreName: vault-secret-store
+    secretStoreName: vault
     secretName: usersrole
 
 envs:

@@ -1,13 +1,5 @@
 apps:
   # --- PRD environment ---
-  - name: secret-store-prd
-    namespace: jdwlabs-prd
-    chartPath: charts/secret-store
-    syncWave: "0"
-    valueFiles:
-      - values.yaml
-      - values-prd.yaml
-
   - name: usersrole-prd
     namespace: jdwlabs-prd
     chartPath: charts/usersrole
