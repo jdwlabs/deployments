@@ -12,13 +12,13 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: usersrole.non.jdwkube.com
+    - host: usersrole.non.jdwlabs.com
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
     - hosts:
-        - usersrole.non.jdwkube.com
+        - usersrole.non.jdwlabs.com
       secretName: usersrole-non-tls
 
 externalSecrets:

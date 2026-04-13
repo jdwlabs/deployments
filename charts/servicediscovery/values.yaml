@@ -43,13 +43,13 @@ ingress:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: ss-clusterissuer
   hosts:
-    - host: servicediscovery.default.jdwkube.com
+    - host: servicediscovery.default.jdwlabs.com
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
     - hosts:
-        - servicediscovery.default.jdwkube.com
+        - servicediscovery.default.jdwlabs.com
       secretName: servicediscovery-default-tls
 
 resources:
@@ -99,14 +99,14 @@ envSecrets: []
 
 serviceDiscovery:
   remotes:
-    authui: https://authui.default.jdwkube.com
-    usersui: https://usersui.default.jdwkube.com
+    authui: https://authui.default.jdwlabs.com
+    usersui: https://usersui.default.jdwlabs.com
   microFrontends:
     - name: authui
       path: auth
       remoteName: authui
       moduleName: ./Routes
-      url: https://authui.default.jdwkube.com
+      url: https://authui.default.jdwlabs.com
       icon: login
       title: Auth
       description: This contains sign in and sign up functionality
@@ -114,7 +114,7 @@ serviceDiscovery:
       path: users
       remoteName: usersui
       moduleName: ./Routes
-      url: https://usersui.default.jdwkube.com
+      url: https://usersui.default.jdwlabs.com
       icon: groups
       title: Users
       description: This contains viewing users and managing profiles functionality

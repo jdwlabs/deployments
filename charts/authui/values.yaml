@@ -42,13 +42,13 @@ ingress:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: ss-clusterissuer
   hosts:
-    - host: authui.default.jdwkube.com
+    - host: authui.default.jdwlabs.com
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
     - hosts:
-        - authui.default.jdwkube.com
+        - authui.default.jdwlabs.com
       secretName: authui-default-tls
 
 resources:
@@ -84,6 +84,6 @@ affinity: {}
 
 envs:
   ENVIRONMENT: default
-  AUTH_BASE_URL: https://usersrole.default.jdwkube.com
+  AUTH_BASE_URL: https://usersrole.default.jdwlabs.com
 
 envSecrets: []
