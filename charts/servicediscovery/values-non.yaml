@@ -4,13 +4,13 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: servicediscovery.non.jdwkube.com
+    - host: servicediscovery.non.jdwlabs.com
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
     - hosts:
-        - servicediscovery.non.jdwkube.com
+        - servicediscovery.non.jdwlabs.com
       secretName: servicediscovery-non-tls
 
 serviceDiscovery:
@@ -18,19 +18,19 @@ serviceDiscovery:
     - path: auth
       name: authui
       id: authui/Routes
-      entry: https://authui.non.jdwkube.com/mf-manifest.json
+      entry: https://authui.non.jdwlabs.com/mf-manifest.json
     - path: users
       name: usersui
       id: usersui/Routes
-      entry: https://usersui.non.jdwkube.com/mf-manifest.json
+      entry: https://usersui.non.jdwlabs.com/mf-manifest.json
     - path: roles
       name: rolesui
       id: rolesui/Routes
-      entry: https://rolesui.non.jdwkube.com/mf-manifest.json
+      entry: https://rolesui.non.jdwlabs.com/mf-manifest.json
   componentRemotes:
     - name: AuthWidgetComponent
       id: authui/AuthWidget
-      entry: https://authui.non.jdwkube.com/mf-manifest.json
+      entry: https://authui.non.jdwlabs.com/mf-manifest.json
   navigationItems:
     - path: auth
       icon: login

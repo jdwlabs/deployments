@@ -4,16 +4,16 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: container.non.jdwkube.com
+    - host: container.non.jdwlabs.com
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
     - hosts:
-        - container.non.jdwkube.com
+        - container.non.jdwlabs.com
       secretName: container-non-tls
 
 envs:
   ENVIRONMENT: non
-  AUTH_BASE_URL: https://usersrole.non.jdwkube.com
-  SERVICE_DISCOVERY_BASE_URL: https://servicediscovery.non.jdwkube.com
+  AUTH_BASE_URL: https://usersrole.non.jdwlabs.com
+  SERVICE_DISCOVERY_BASE_URL: https://servicediscovery.non.jdwlabs.com

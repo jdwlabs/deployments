@@ -13,15 +13,15 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: usersui.prd.jdwkube.com
+    - host: usersui.prd.jdwlabs.com
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
     - hosts:
-        - usersui.prd.jdwkube.com
+        - usersui.prd.jdwlabs.com
       secretName: usersui-prd-tls
 
 envs:
   ENVIRONMENT: prod
-  AUTH_BASE_URL: https://usersrole.prd.jdwkube.com
+  AUTH_BASE_URL: https://usersrole.prd.jdwlabs.com
