@@ -79,19 +79,20 @@ apps:
 
 ## Sync Wave Ordering
 
-| Wave | Charts                                                    |
-|------|-----------------------------------------------------------|
-| 0    | secret-store (SecretStores + RBAC must exist before apps) |
-| 1    | All application charts (default)                          |
+| Wave | Charts                 |
+|------|------------------------|
+| 1    | All application charts |
 
 ## Prerequisites
 
-The following must exist in the cluster before deploying:
+The following must exist in the cluster before deploying (all manged by the platfom repo):
 
 - Tenant namespaces provisioned by the platform
 - External Secrets Operator (ESO) installed
-- Vault accessible at `http://vault.vault.svc.cluster.local:8200`
-- `vault-token` Kubernetes Secret in each app namespace
+- `vault` ClusterSecretStore (platform-managed, reads from Vault)
+- `k8s-secret-store` ClusterSecretStore (platform-managed, reads from `database` namespace)
 - cert-manager with `letsencrypt-prod` ClusterIssuer
 - nginx ingress controller
 - CNPG PostgreSQL clusters in the `database` namespace
+
+Secret stores are managed centrally by the platform - no per-tenant secret store setup is needed.

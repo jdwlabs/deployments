@@ -1,13 +1,5 @@
 apps:
   # --- NON environment ---
-  - name: secret-store-non
-    namespace: jdwlabs-non
-    chartPath: charts/secret-store
-    syncWave: "0"
-    valueFiles:
-      - values.yaml
-      - values-non.yaml
-
   - name: usersrole-non
     namespace: jdwlabs-non
     chartPath: charts/usersrole
