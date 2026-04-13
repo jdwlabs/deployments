@@ -31,16 +31,16 @@ externalSecrets:
     secretName: usersrole-prd
 
 envs:
-  UR_PG_DATASOURCE_URL: jdbc:postgresql://postgresql-cluster-prd-rw.database:5432/jdw_prd
+  UR_PG_DATASOURCE_URL: jdbc:postgresql://platform-postgresql-cluster-prd-rw.database:5432/jdwlabs_prd
   UR_JWT_EXPIRATION_TIME_MS: "7200000"
 
 envSecrets:
   - secretKey: UR_PG_USERNAME
-    key: postgresql-cluster-prd-app
+    key: platform-postgresql-cluster-prd-app
     property: username
     secretName: usersrole-pg-prd
   - secretKey: UR_PG_PASSWORD
-    key: postgresql-cluster-prd-app
+    key: platform-postgresql-cluster-prd-app
     property: password
     secretName: usersrole-pg-prd
   - secretKey: UR_JWT_SECRET_KEY

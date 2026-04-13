@@ -86,26 +86,26 @@ affinity: {}
 externalSecrets:
   - refreshInterval: 1m
     secretStoreName: k8s-secret-store
-    secretName: postgresql-cluster-non-app
+    secretName: platform-postgresql-cluster-non-app
   - refreshInterval: 1m
     secretStoreName: vault-secret-store
     secretName: usersrole
 
 envs:
-  UR_PG_DATASOURCE_URL: jdbc:postgresql://postgresql-cluster-non-rw.database:5432/jdw_dev
+  UR_PG_DATASOURCE_URL: jdbc:postgresql://platform-postgresql-cluster-non-rw.database:5432/jdwlabs_non
   UR_JWT_EXPIRATION_TIME_MS: "7200000"
 #  JAVA_OPTS: "-XX:+UseContainerSupport -Xms512m -Xmx1g"
 
 envSecrets:
   - secretKey: UR_PG_USERNAME
-    key: postgresql-cluster-non-app
+    key: platform-postgresql-cluster-non-app
     property: username
-    secretName: postgresql-cluster-non-app
+    secretName: platform-postgresql-cluster-non-app
   - secretKey: UR_PG_PASSWORD
-    key: postgresql-cluster-non-app
+    key: platform-postgresql-cluster-non-app
     property: password
-    secretName: postgresql-cluster-non-app
+    secretName: platform-postgresql-cluster-non-app
   - secretKey: UR_JWT_SECRET_KEY
     key: usersrole
-    property: jwt_key_dev
+    property: jwt_key_non
     secretName: usersrole
