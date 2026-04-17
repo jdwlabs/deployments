@@ -1,6 +1,7 @@
 revisionHistoryLimit: 1
 
 ingress:
+  useGatewayAPI: true
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
