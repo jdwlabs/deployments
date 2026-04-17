@@ -3,6 +3,7 @@ image:
   tag: "1.0.0"
 
 ingress:
+  useGatewayAPI: true
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
