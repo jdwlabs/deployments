@@ -38,24 +38,15 @@ service:
 
 ingress:
   enabled: true
-  useGatewayAPI: false
   gateway:
     name: platform-gateway
     namespace: nginx-gateway
     sectionName: https
   className: "nginx"
   annotations:
-    kubernetes.io/ingress.class: nginx
-    cert-manager.io/cluster-issuer: ss-clusterissuer
+    cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: usersui.default.jdwlabs.com
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls:
-    - hosts:
-        - usersui.default.jdwlabs.com
-      secretName: usersui-default-tls
 
 resources:
   requests:

@@ -10,18 +10,8 @@ resources:
     cpu: "500m"
 
 ingress:
-  useGatewayAPI: true
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: authui.prd.jdwlabs.com
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls:
-    - hosts:
-        - authui.prd.jdwlabs.com
-      secretName: authui-prd-tls
 
 envs:
   ENVIRONMENT: prod

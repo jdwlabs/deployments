@@ -4,18 +4,8 @@ image:
 revisionHistoryLimit: 1
 
 ingress:
-  useGatewayAPI: true
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: rolesui.non.jdwlabs.com
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls:
-    - hosts:
-        - rolesui.non.jdwlabs.com
-      secretName: rolesui-non-tls
 
 envs:
   ENVIRONMENT: non

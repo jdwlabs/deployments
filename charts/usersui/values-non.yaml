@@ -1,18 +1,8 @@
 revisionHistoryLimit: 1
 
 ingress:
-  useGatewayAPI: true
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: usersui.non.jdwlabs.com
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls:
-    - hosts:
-        - usersui.non.jdwlabs.com
-      secretName: usersui-non-tls
 
 envs:
   ENVIRONMENT: non

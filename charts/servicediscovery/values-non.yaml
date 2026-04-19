@@ -1,18 +1,8 @@
 revisionHistoryLimit: 1
 
 ingress:
-  useGatewayAPI: true
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: servicediscovery.non.jdwlabs.com
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls:
-    - hosts:
-        - servicediscovery.non.jdwlabs.com
-      secretName: servicediscovery-non-tls
 
 serviceDiscovery:
   routeRemotes:
