@@ -1,4 +1,4 @@
-{{- if and .Values.ingress.enabled .Values.ingress.useGatewayAPI -}}
+{{- if .Values.ingress.enabled -}}
 {{- $fullName := include "servicediscovery.fullname" . -}}
 {{- $svcPort := .Values.service.port -}}
 apiVersion: gateway.networking.k8s.io/v1

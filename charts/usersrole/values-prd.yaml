@@ -10,18 +10,8 @@ resources:
     cpu: "1"
 
 ingress:
-  useGatewayAPI: true
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: usersrole.prd.jdwlabs.com
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls:
-    - hosts:
-        - usersrole.prd.jdwlabs.com
-      secretName: usersrole-prd-tls
 
 externalSecrets:
   - refreshInterval: 1m
