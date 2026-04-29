@@ -31,16 +31,17 @@ jobs:
           python3 tools/generate-index.py
           mkdir -p ../temp_artifacts
           cp index.html ../temp_artifacts/index.html
-
-      - name: Commit index.html to gh-pages
-        run: |
-          rm -f index.html
-          git checkout gh-pages
-          cp ../temp_artifacts/index.html .
-          git add index.html
-          git commit -m "docs: update index.html" || echo "No changes to index.html"
-          git push origin gh-pages
-          git checkout main
+- name: Commit index.html to gh-pages
+  run: |
+    # Cleanup any existing file in the workspace
+    rm -f index.html
+    git checkout gh-pages
+    git pull origin gh-pages
+    cp ../temp_artifacts/index.html .
+    git add index.html
+    git commit -m "docs: update index.html" || echo "No changes to index.html"
+    git push origin gh-pages
+    git checkout main
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.7.0
