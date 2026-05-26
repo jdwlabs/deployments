@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/jdwlabs/deployments/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/jdwlabs/deployments/actions/workflows/ci.yaml)
 [![Release](https://github.com/jdwlabs/deployments/actions/workflows/release.yaml/badge.svg?branch=main)](https://github.com/jdwlabs/deployments/actions/workflows/release.yaml)
+[![License](https://img.shields.io/badge/License-PolyForm%20NonCommercial%201.0-blue)](https://polyformproject.org/licenses/noncommercial/1.0.0/)
 
 GitOps deployment repository for the `jdwlabs` tenant on the Jdwlabs platform. ArgoCD reads this repo via the
 `jdwlabs-deployments` ApplicationSet to deploy applications into tenant-owned namespaces.
