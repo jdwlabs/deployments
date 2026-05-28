@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(helm lint *)",
+      "Bash(helm template *)",
+      "Bash(helm show *)",
+      "Bash(argocd app get*)",
+      "Bash(argocd app diff*)",
+      "Bash(argocd app list*)",
+      "Bash(kubectl get*)",
+      "Bash(kubectl describe*)",
+      "Bash(kubectl logs*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git status*)",
+      "Bash(git add *)",
+      "Bash(git commit*)"
+    ],
+    "deny": [
+      "Bash(argocd app sync*)",
+      "Bash(argocd app delete*)",
+      "Bash(kubectl apply*)",
+      "Bash(kubectl delete*)",
+      "Bash(git push*)"
+    ]
+  }
+}
