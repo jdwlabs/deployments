@@ -40,6 +40,46 @@ docs: add troubleshooting section to README
 ci: add helm lint to PR workflow
 ```
 
+### Footers
+
+Footers appear after an optional body, separated by a blank line. Common footers:
+
+| Footer | When to use |
+|--------|-------------|
+| `Refs: JDWLABS-XX` | Links commit to a Jira issue (does not close it) |
+| `Closes: JDWLABS-XX` | Closes the Jira issue on merge |
+| `Closes: #N` | Closes a GitHub issue by number |
+| `BREAKING CHANGE: <desc>` | Required when a chart change breaks existing deployments or removes a value |
+| `Co-Authored-By: Name <email>` | Credit a co-author (human or AI) |
+
+**AI contributor footer** — include when commits were written with AI assistance:
+
+```
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+```
+
+**Full examples with footers:**
+
+```
+feat(authui): add ArgoCD Application for authui service
+
+Deploys authui to the jdwlabs namespace via the existing
+frontend Helm chart. targetRevision set to HEAD.
+
+Refs: JDWLABS-22
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+```
+
+```
+fix!(charts/frontend): rename replicas value to replicaCount
+
+BREAKING CHANGE: values key renamed from replicas to replicaCount
+to align with upstream chart conventions. Update all values.yaml
+overrides before applying.
+
+Closes: JDWLABS-80
+```
+
 ### Rules
 
 - Subject line ≤72 characters, lowercase, no trailing period
