@@ -10,11 +10,15 @@ This repository follows [Conventional Commits](https://www.conventionalcommits.o
 |------|-------------|
 | `feat` | New service deployment or new chart |
 | `fix` | Fix a broken deployment manifest or chart template |
-| `chore` | Maintenance: chart version bumps, config cleanup |
-| `docs` | Documentation only |
+| `build` | Chart dependency or tooling change |
+| `chore` | Maintenance: version bumps, config cleanup |
 | `ci` | CI/CD pipeline changes |
+| `docs` | Documentation only |
+| `perf` | Performance improvement |
 | `refactor` | Restructure manifests/charts with no behavior change |
 | `revert` | Reverting a previous commit |
+| `style` | Formatting or whitespace only (no logic change) |
+| `test` | Adding or updating tests |
 
 ### Format
 
