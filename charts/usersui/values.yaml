@@ -10,7 +10,7 @@ autoscaling:
 revisionHistoryLimit: 2
 
 image:
-  repository: jdwillmsen/jdw-usersui
+  repository: jdwlabs/usersui
   pullPolicy: IfNotPresent
   tag: ""
 
