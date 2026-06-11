@@ -1,0 +1,49 @@
+name: E2E
+
+on:
+  repository_dispatch:
+    types:
+      - apps-deployed
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # The apps workspace is wired to Nx Cloud, but this repo has no access
+  # token — run fully local so Nx does not fail trying to authenticate.
+  NX_NO_CLOUD: true
+
+jobs:
+  platform-e2e:
+    # Staging is only reachable from inside the cluster network, so this must
+    # run on the self-hosted ARC runner rather than a GitHub-hosted one.
+    runs-on: ubuntu-jdwlabs
+    # Bounded so a hung run cannot starve the self-hosted runner queue.
+    timeout-minutes: 30
+    steps:
+      - name: Checkout Apps Repo at Published SHA
+        uses: actions/checkout@v6
+        with:
+          repository: jdwlabs/apps
+          ref: ${{ github.event.client_payload.sha }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run platform-e2e Against Staging
+        run: pnpm exec nx run platform-e2e:e2e
+        env:
+          BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: dist/.playwright/apps/e2e/platform-e2e/
+          retention-days: 14
+          if-no-files-found: ignore
