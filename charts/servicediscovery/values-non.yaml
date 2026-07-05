@@ -5,6 +5,40 @@ ingress:
     - host: servicediscovery.non.jdwlabs.com
 
 serviceDiscovery:
+  # Schema for the main-line servicediscovery binary (0.5.x): /api/remotes serves
+  # this map to the container shell, /api/micro-frontends drives its nav + lazy
+  # routes. The route/component/navigation keys below are the legacy-image schema;
+  # non tracks main-line images, so both schemas are kept until the generations
+  # converge.
+  remotes:
+    authui: https://authui.non.jdwlabs.com
+    usersui: https://usersui.non.jdwlabs.com
+    rolesui: https://rolesui.non.jdwlabs.com
+  microFrontends:
+    - name: authui
+      path: auth
+      remoteName: authui
+      moduleName: ./Routes
+      url: https://authui.non.jdwlabs.com
+      icon: login
+      title: Auth
+      description: This contains sign in and sign up functionality
+    - name: usersui
+      path: users
+      remoteName: usersui
+      moduleName: ./Routes
+      url: https://usersui.non.jdwlabs.com
+      icon: groups
+      title: Users
+      description: This contains viewing users and managing profiles functionality
+    - name: rolesui
+      path: roles
+      remoteName: rolesui
+      moduleName: ./Routes
+      url: https://rolesui.non.jdwlabs.com
+      icon: lock
+      title: Roles
+      description: This contains viewing and managing roles functionality
   routeRemotes:
     - path: auth
       name: authui
