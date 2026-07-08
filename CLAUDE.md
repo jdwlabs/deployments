@@ -67,6 +67,14 @@ kubectl logs <pod> -n <namespace>                # Pod logs
 2. Run `helm template` to verify the rendered output looks correct
 3. Merge to main — ArgoCD will sync automatically
 
+## Code & Manifest Comments
+
+Never put a Jira ticket ID (`JDWLABS-*`) or PR/issue number in a comment in
+any file here — ArgoCD Application manifests and Helm charts included.
+Traceability lives in the commit message and PR description; comments
+should explain *why* the config is what it is so they stay meaningful
+after the ticket closes.
+
 ## AI Agent Contract
 
 - `argocd app sync` is NEVER run autonomously — sync happens via GitOps on merge to main
