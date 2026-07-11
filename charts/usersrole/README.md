@@ -20,6 +20,12 @@ The `usersrole` Helm chart is used to deploy the backend service responsible for
 - `values.yaml` – Base configuration shared across environments
 - `values-*.yaml` – Environment-specific overrides
 
+## Shared Scaffold
+
+Scaffold templates (deployment, service, service account, HPA, HTTPRoute, tests) are one-line includes of the
+[`common` library chart](../common/README.md), declared as a `file://../common` dependency in `Chart.yaml`. Run
+`helm dependency build charts/usersrole` once after cloning before linting or templating locally.
+
 ## Deployment
 
 This chart is managed and deployed by Argo CD using GitOps workflows. Each environment references the appropriate values file.

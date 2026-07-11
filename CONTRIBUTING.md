@@ -96,6 +96,7 @@ Closes: JDWLABS-80
 ## Development Setup
 
 ```bash
+helm dependency build charts/<name>   # Fetch file:// library dependency
 helm lint charts/<name>               # Validate chart
 helm template test charts/<name>      # Render and review templates
 argocd app diff <name>                # Preview diff vs live (read-only)

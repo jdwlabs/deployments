@@ -16,6 +16,12 @@ GitOps-based deployments across environments.
 - `values-*.yaml` – Environment-specific overrides
 - `tests/` – Basic connection test resource
 
+## Shared Scaffold
+
+Scaffold templates (deployment, service, service account, HPA, HTTPRoute, tests) are one-line includes of the
+[`common` library chart](../common/README.md), declared as a `file://../common` dependency in `Chart.yaml`. Run
+`helm dependency build charts/rolesui` once after cloning before linting or templating locally.
+
 ## Deployment
 
 Argo CD pulls in this chart directly from the repo and applies the appropriate `values-*.yaml` based on the target
