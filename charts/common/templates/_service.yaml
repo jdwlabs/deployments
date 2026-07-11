@@ -1,0 +1,22 @@
+{{/*
+Shared Service scaffold. When service.targetPort is unset the Service targets
+the named container port "http", which the shared Deployment binds to
+service.port — the two forms resolve to the same port.
+*/}}
+{{- define "common.service" -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "common.fullname" . }}
+  labels:
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort | default "http" }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "common.selectorLabels" . | nindent 4 }}
+{{- end }}
