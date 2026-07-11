@@ -12,12 +12,12 @@ The `usersui` Helm chart is used to deploy the frontend application for managing
 - `Chart.yaml` – Chart metadata and versioning
 - `templates/` – Kubernetes manifests:
     - `deployment.yaml` – Main deployment
-    - `service.yaml`, `ingress.yaml` – Service exposure
+    - `service.yaml`, `httproute.yaml` – Service exposure
     - `hpa.yaml` – Autoscaling setup
-    - `serviceaccount.yaml`, `_helpers.tpl`, `NOTES.txt` – Support resources
+    - `serviceaccount.yaml`, `NOTES.txt` – Support resources
     - `tests/test-connection.yaml` – Helm test for connectivity
 - `values.yaml` – Base configuration
-- `values-dev.yaml`, `values-uat.yaml`, `values-non.yaml`, `values-prd.yaml` – Environment-specific overrides
+- `values-non.yaml`, `values-prd.yaml` – Environment-specific overrides
 
 ## Shared Scaffold
 

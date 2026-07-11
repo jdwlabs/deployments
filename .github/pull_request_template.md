@@ -19,7 +19,7 @@
 ## Checklist
 
 - [ ] PR title follows conventional commit format: `type(scope): description`
-- [ ] `helm lint charts/<name>` passes (if chart changed)
+- [ ] `helm lint charts/<name>` passes after `helm dependency build charts/<name>` (if chart changed)
 - [ ] `helm template` output reviewed (if chart changed)
 - [ ] `argocd app diff` output checked (if application manifest changed)
 - [ ] No secrets or credentials in diff

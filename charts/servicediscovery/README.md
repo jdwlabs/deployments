@@ -14,7 +14,7 @@ across environments.
 - `Chart.yaml` – Chart metadata and versioning
 - `templates/` – Kubernetes manifests:
     - `deployment.yaml` – Service deployment configuration
-    - `service.yaml`, `ingress.yaml` – Service exposure
+    - `service.yaml`, `httproute.yaml` – Service exposure
     - `configmap.yaml` – Runtime service config
     - `externalsecrets.yaml` – Secrets managed via External Secrets
     - `hpa.yaml` – Horizontal pod autoscaler

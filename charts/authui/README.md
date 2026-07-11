@@ -11,7 +11,7 @@ GitOps-based deployments across environments.
 ## Layout
 
 - `Chart.yaml` – Chart metadata and versioning
-- `templates/` – Kubernetes manifests (deployment, service, ingress, etc.)
+- `templates/` – Kubernetes manifests (deployment, service, HTTPRoute, etc.)
 - `values.yaml` – Base configuration
 - `values-*.yaml` – Environment-specific overrides
 
