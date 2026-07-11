@@ -16,6 +16,7 @@ ArgoCD Application definitions and custom Helm charts for jdwlabs tenant deploym
 ## Development Commands
 
 ```bash
+helm dependency build charts/<name>   # Fetch file:// library dependency
 helm lint charts/<name>               # Lint chart
 helm template <release> charts/<name> # Render templates
 argocd app get <name>                 # App status (read-only)

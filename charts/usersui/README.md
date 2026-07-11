@@ -19,6 +19,12 @@ The `usersui` Helm chart is used to deploy the frontend application for managing
 - `values.yaml` – Base configuration
 - `values-dev.yaml`, `values-uat.yaml`, `values-non.yaml`, `values-prd.yaml` – Environment-specific overrides
 
+## Shared Scaffold
+
+Scaffold templates (deployment, service, service account, HPA, HTTPRoute, tests) are one-line includes of the
+[`common` library chart](../common/README.md), declared as a `file://../common` dependency in `Chart.yaml`. Run
+`helm dependency build charts/usersui` once after cloning before linting or templating locally.
+
 ## Deployment
 
 This chart is deployed via Argo CD and supports GitOps-driven deployments across all environments.

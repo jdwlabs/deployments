@@ -17,9 +17,10 @@ deployments/
 │   └── prd/
 │       └── config.yaml  # Defines apps for prod environment
 └── charts/
+    ├── common/                # Library chart: shared workload scaffold
     └── <chart-name>/
-        ├── Chart.yaml
-        ├── templates/
+        ├── Chart.yaml         # Declares the file://../common dependency
+        ├── templates/         # One-line includes of common.* + app-specific extras
         ├── values.yaml        # Base values
         ├── values-non.yaml    # Non-prod overrides
         └── values-prd.yaml    # Prod overrides
@@ -60,7 +61,8 @@ apps:
 
 ## Adding a New App
 
-1. Create the Helm chart under `charts/<name>/`
+1. Create the Helm chart under `charts/<name>/` — consume the `common` library chart for the standard
+   scaffold (see `charts/common/README.md`)
 2. Add base `values.yaml` and per-environment `values-<env>.yaml` files
 3. Add an entry to each relevant `argocd/<env>/config.yaml`
 4. Commit and push to `main`

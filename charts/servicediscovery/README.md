@@ -22,6 +22,12 @@ across environments.
 - `values.yaml` – Base configuration
 - `values-*.yaml` – Environment-specific overrides
 
+## Shared Scaffold
+
+Scaffold templates (deployment, service, service account, HPA, HTTPRoute, tests) are one-line includes of the
+[`common` library chart](../common/README.md), declared as a `file://../common` dependency in `Chart.yaml`. Run
+`helm dependency build charts/servicediscovery` once after cloning before linting or templating locally.
+
 ## Deployment
 
 Argo CD automatically deploys this chart using the appropriate values file depending on the environment.

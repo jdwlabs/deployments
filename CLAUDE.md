@@ -23,6 +23,7 @@ ArgoCD Application definitions and custom Helm charts for jdwlabs tenant service
 ### Validate Helm charts
 
 ```bash
+helm dependency build charts/<chart-name>        # Fetch the file:// library dependency (needed once before lint/template)
 helm lint charts/<chart-name>                    # Lint chart for errors
 helm template <release> charts/<chart-name>      # Render templates locally
 helm template <release> charts/<chart-name> --debug  # Verbose render with values
