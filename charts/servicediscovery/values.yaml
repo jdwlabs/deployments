@@ -86,6 +86,12 @@ affinity: {}
 
 externalSecrets: []
 
+# Rendered ahead of envs; values pass through tpl so the resolved image tag
+# reaches the app without being duplicated by hand on every release.
+extraEnv:
+  - name: SD_VERSION
+    value: '{{ .Values.image.tag | default .Chart.AppVersion }}'
+
 envs:
   SD_PORT: 9000
   SD_CONFIG_PATH: /app/config/config.json

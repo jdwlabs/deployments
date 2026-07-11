@@ -82,4 +82,4 @@ envs:
   AUTH_BASE_URL: https://usersrole.default.jdwlabs.com
   SERVICE_DISCOVERY_BASE_URL: https://servicediscovery.default.jdwlabs.com
 
-envSecrets: {}
+envSecrets: []
