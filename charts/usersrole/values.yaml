@@ -1,4 +1,7 @@
-replicaCount: 0
+# Only applied when autoscaling.enabled is false; while autoscaling is on the
+# HPA owns the replica count and this value is ignored. Kept at 1 so turning
+# autoscaling off never scales the workload to zero by accident.
+replicaCount: 1
 
 autoscaling:
   enabled: true
