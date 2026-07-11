@@ -13,9 +13,9 @@ The `usersrole` Helm chart is used to deploy the backend service responsible for
 - `templates/` – Kubernetes manifests:
     - `deployment.yaml` – Main deployment
     - `externalsecrets.yaml` – Integration with secret management
-    - `service.yaml`, `ingress.yaml` – Service exposure
+    - `service.yaml`, `httproute.yaml` – Service exposure
     - `hpa.yaml` – Autoscaling
-    - `serviceaccount.yaml`, `_helpers.tpl`, `NOTES.txt` – Operational components
+    - `serviceaccount.yaml`, `NOTES.txt` – Operational components
     - `tests/test-connection.yaml` – Basic connectivity test
 - `values.yaml` – Base configuration shared across environments
 - `values-*.yaml` – Environment-specific overrides
