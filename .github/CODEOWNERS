@@ -1,0 +1,5 @@
+# Production-facing paths require an explicit human (code owner) review
+# before a pull request touching them can merge. Enforced by the
+# "PRD Promotion Review Gate" repository ruleset (require_code_owner_review).
+/charts/*/values-prd.yaml @jdwillmsen
+/argocd/prd/ @jdwillmsen

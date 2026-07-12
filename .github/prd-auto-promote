@@ -1,0 +1,8 @@
+# Charts (directory names under charts/) enabled for automatic prd promotion
+# pull requests after a passing E2E run against non. One name per line.
+#
+# Deliberately empty: prd currently pins images from the previous release
+# line, and for some apps those are functionally ahead of the current main
+# line (different remotes API contract). Add a chart here only once its
+# main-line image is verified to supersede the pinned one - see
+# docs/prd-promotion.md for the verification procedure and burn-down plan.
