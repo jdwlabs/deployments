@@ -1,0 +1,209 @@
+name: Promote PRD
+
+# Opens a reviewed pull request that bumps image.tag in a chart's
+# values-prd.yaml. prd image tags change ONLY through pull requests opened by
+# this workflow - never by hand-edits and never by direct pushes. The commit
+# is created through the GitHub contents API so it is signed and, when App
+# credentials are configured, authored by the bot App (whose PRs trigger CI).
+#
+# Triggers:
+# - workflow_run on E2E: after a passing E2E run against non, every chart
+#   listed in .github/prd-auto-promote whose appVersion differs from the
+#   pinned prd tag gets a promotion PR.
+# - workflow_dispatch: promote a single chart on demand, optionally to an
+#   explicit tag (defaults to the chart's current appVersion).
+#
+# See docs/prd-promotion.md for the full contract and runbook.
+
+on:
+  workflow_run:
+    workflows:
+      - E2E
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Chart directory name under charts/ (e.g. rolesui)'
+        required: true
+        type: string
+      tag:
+        description: 'Image tag to promote prd to (defaults to the chart appVersion)'
+        required: false
+        type: string
+        default: ''
+
+permissions: {}
+
+# Serialize promotion runs so two runs never race on the same promotion branch.
+concurrency:
+  group: promote-prd
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # Fallback path only: when App credentials are absent the default token
+      # pushes the promotion branch and opens the PR (without triggering CI).
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check for promotion bot credentials
+        id: creds
+        env:
+          APP_ID: ${{ secrets.RELEASE_APP_ID }}
+        run: |
+          if [ -n "${APP_ID}" ]; then
+            echo "has-app=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-app=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::RELEASE_APP_ID / RELEASE_APP_PRIVATE_KEY secrets are not configured. Falling back to GITHUB_TOKEN - PRs opened this way do NOT trigger CI automatically; run the CI workflow manually against the promotion branch."
+          fi
+
+      - name: Generate promotion bot token
+        id: bot-token
+        if: ${{ steps.creds.outputs.has-app == 'true' }}
+        uses: actions/create-github-app-token@v3.2.0
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@v6.0.3
+
+      - name: Determine promotion candidates
+        id: candidates
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_APP: ${{ inputs.app }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          chart_app_version() {
+            sed -n 's/^appVersion:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}[[:space:]]*$/\1/p' "charts/$1/Chart.yaml" | head -1
+          }
+
+          : > candidates.txt
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            app="$INPUT_APP"
+            if [ ! -f "charts/${app}/values-prd.yaml" ]; then
+              echo "::error::charts/${app}/values-prd.yaml not found - '${app}' is not a promotable chart."
+              exit 1
+            fi
+            tag="${INPUT_TAG:-$(chart_app_version "$app")}"
+            if [ -z "$tag" ]; then
+              echo "::error::no tag was provided and charts/${app}/Chart.yaml has no appVersion."
+              exit 1
+            fi
+            echo "$app $tag" >> candidates.txt
+          else
+            allowlist=$(grep -v '^[[:space:]]*#' .github/prd-auto-promote 2>/dev/null | sed '/^[[:space:]]*$/d' || true)
+            if [ -z "$allowlist" ]; then
+              echo "No charts are enabled for automatic prd promotion (.github/prd-auto-promote is empty). Nothing to do."
+            fi
+            for app in $allowlist; do
+              if [ ! -f "charts/${app}/values-prd.yaml" ]; then
+                echo "::warning::allowlisted chart '${app}' has no values-prd.yaml; skipping."
+                continue
+              fi
+              tag=$(chart_app_version "$app")
+              if [ -z "$tag" ]; then
+                echo "::warning::charts/${app}/Chart.yaml has no appVersion; skipping."
+                continue
+              fi
+              echo "$app $tag" >> candidates.txt
+            done
+          fi
+          echo "Promotion candidates:"
+          cat candidates.txt || true
+
+      - name: Open promotion pull requests
+        env:
+          GH_TOKEN: ${{ steps.bot-token.outputs.token || github.token }}
+          REPO: ${{ github.repository }}
+          TRIGGER_URL: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.html_url || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}
+          TRIGGER_DESC: ${{ github.event_name == 'workflow_run' && 'passing E2E run against non' || format('manual dispatch by @{0}', github.actor) }}
+        run: |
+          prd_tag() {
+            sed -n '/^image:/,/^[^[:space:]]/ s/^[[:space:]]*tag:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}[[:space:]]*$/\1/p' "charts/$1/values-prd.yaml" | head -1
+          }
+
+          main_sha=$(gh api "repos/${REPO}/git/ref/heads/main" --jq .object.sha)
+
+          while read -r app tag; do
+            [ -z "$app" ] && continue
+            file="charts/${app}/values-prd.yaml"
+            current=$(prd_tag "$app")
+
+            if [ "$current" = "$tag" ]; then
+              echo "[${app}] prd already pins ${tag}; nothing to promote."
+              continue
+            fi
+
+            branch="chore/promote-${app}-prd"
+
+            # Always rebuild the promotion branch from the current main tip so
+            # each PR is a clean single-commit diff and reruns are idempotent.
+            if gh api "repos/${REPO}/git/ref/heads/${branch}" >/dev/null 2>&1; then
+              gh api -X PATCH "repos/${REPO}/git/refs/heads/${branch}" \
+                -f sha="$main_sha" -F force=true >/dev/null
+            else
+              gh api -X POST "repos/${REPO}/git/refs" \
+                -f ref="refs/heads/${branch}" -f sha="$main_sha" >/dev/null
+            fi
+
+            # Change ONLY the image.tag line inside the top-level image block.
+            cp "$file" /tmp/values-prd-before.yaml
+            sed -i "/^image:/,/^[^[:space:]]/ s|^\([[:space:]]*tag:[[:space:]]*\).*|\1\"${tag}\"|" "$file"
+            changed=$(diff /tmp/values-prd-before.yaml "$file" | grep -c '^<' || true)
+            if [ "$changed" -ne 1 ]; then
+              echo "::error::[${app}] expected exactly one changed line in ${file}, got ${changed}; skipping this chart."
+              git checkout -- "$file"
+              continue
+            fi
+
+            # Commit through the contents API: the commit is created server-side,
+            # signed by GitHub, and authored by the bot identity behind GH_TOKEN.
+            file_sha=$(gh api "repos/${REPO}/contents/${file}?ref=${branch}" --jq .sha)
+            gh api -X PUT "repos/${REPO}/contents/${file}" \
+              -f message="chore(${app}): promote prd image tag to ${tag}" \
+              -f branch="${branch}" \
+              -f sha="${file_sha}" \
+              -f content="$(base64 -w0 "$file")" >/dev/null
+            git checkout -- "$file"
+            echo "[${app}] pushed promotion commit ${current} -> ${tag} on ${branch}."
+
+            existing=$(gh pr list -R "$REPO" --head "$branch" --state open --json number --jq length)
+            if [ "$existing" -gt 0 ]; then
+              echo "[${app}] promotion PR already open for ${branch}; branch updated in place."
+              continue
+            fi
+
+            cat > /tmp/pr-body.md <<EOF
+          Automated prd promotion proposal opened by the Promote PRD workflow.
+
+          | | |
+          |---|---|
+          | Chart | \`charts/${app}\` |
+          | prd image tag | \`${current}\` -> \`${tag}\` |
+          | Trigger | ${TRIGGER_DESC} (${TRIGGER_URL}) |
+
+          This PR changes **only** \`image.tag\` in \`charts/${app}/values-prd.yaml\`.
+          Chart.yaml (\`version\`, \`appVersion\`) is untouched by design - see
+          docs/prd-promotion.md for the versioning contract.
+
+          ## Reviewer checklist
+
+          - [ ] The target tag's image is verified to supersede the currently pinned image (two release generations may coexist; a numerically newer-looking tag is not proof).
+          - [ ] CI is green: lint, template (values-prd stack renders), validate-config.
+          - [ ] Rollback plan understood: revert this PR to re-pin \`${current}\`; ArgoCD syncs the revert like any other merge.
+
+          Merging this PR causes ArgoCD to sync prd to the new tag automatically.
+          EOF
+
+            gh pr create -R "$REPO" --base main --head "$branch" \
+              --title "chore(${app}): promote prd image tag to ${tag}" \
+              --body-file /tmp/pr-body.md
+          done < candidates.txt

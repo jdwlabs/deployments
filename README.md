@@ -36,6 +36,21 @@ The platform's `jdwlabs-deployments` ApplicationSet uses a matrix generator that
 
 All apps use automated sync with prune, self-heal, `ServerSideApply`, and `PruneLast`.
 
+## Versioning & prd Promotion
+
+Per chart, three version fields have distinct owners — see
+[docs/prd-promotion.md](docs/prd-promotion.md) for the full contract:
+
+- `Chart.yaml` `version` — chart **packaging** only (templates/values
+  structure/dependencies). Never mirror an image tag into it; it drives the
+  Helm repo release stream.
+- `Chart.yaml` `appVersion` — what **non** runs; maintained by the apps-repo
+  release bot via direct commit.
+- `values-prd.yaml` `image.tag` — what **prd** runs; changed **only** by
+  pull requests opened by the `Promote PRD` workflow after a passing non E2E
+  run (or a manual dispatch). Never hand-edit it. prd-path changes require a
+  code-owner review to merge.
+
 ## Config Schema
 
 Each `argocd/<env>/config.yaml` contains:

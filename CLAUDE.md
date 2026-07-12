@@ -79,6 +79,9 @@ after the ticket closes.
 ## AI Agent Contract
 
 - `argocd app sync` is NEVER run autonomously — sync happens via GitOps on merge to main
+- NEVER hand-edit `charts/*/values-prd.yaml` — prd image tags change only via
+  pull requests opened by the `Promote PRD` workflow (see `docs/prd-promotion.md`);
+  `Chart.yaml` `version` is for chart packaging changes only, never image tags
 - `kubectl apply` and `kubectl delete` are out of scope
 - Read-only `kubectl get`, `kubectl describe`, `kubectl logs` are safe
 - Never set ArgoCD Application `targetRevision` to a feature branch — always `HEAD` or a semver tag
