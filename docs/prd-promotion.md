@@ -46,8 +46,10 @@ gh workflow run promote-prd.yml -R jdwlabs/deployments \
 
 ### Guardrails
 
-- One chart per PR; the workflow verifies the diff is exactly one line and
-  aborts that chart otherwise.
+- One chart per PR; the workflow verifies the diff is exactly one line — and
+  that the line is the image tag — and aborts that chart otherwise.
+- `app` and `tag` values are validated up front (chart-name and Docker image
+  tag grammar) before they reach any file path, git ref, or edit command.
 - The promotion branch is rebuilt from `main` on every run — reruns are
   idempotent and PRs never accumulate stale commits.
 - The commit is created through the GitHub contents API, so it is signed and

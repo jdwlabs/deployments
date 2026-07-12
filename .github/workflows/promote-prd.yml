@@ -85,9 +85,24 @@ jobs:
             sed -n 's/^appVersion:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}[[:space:]]*$/\1/p' "charts/$1/Chart.yaml" | head -1
           }
 
+          # Both values flow into file paths, git refs, sed replacements and PR
+          # text, so they are validated before any use: chart names as the
+          # lowercase-alphanumeric-and-hyphen directory convention, tags as the
+          # Docker image tag grammar (rules out sed metacharacters entirely).
+          valid_app() {
+            [[ "$1" =~ ^[a-z0-9-]+$ ]]
+          }
+          valid_tag() {
+            [[ "$1" =~ ^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$ ]]
+          }
+
           : > candidates.txt
           if [ "$EVENT" = "workflow_dispatch" ]; then
             app="$INPUT_APP"
+            if ! valid_app "$app"; then
+              echo "::error::invalid app '${app}' - chart names are lowercase alphanumerics and hyphens."
+              exit 1
+            fi
             if [ ! -f "charts/${app}/values-prd.yaml" ]; then
               echo "::error::charts/${app}/values-prd.yaml not found - '${app}' is not a promotable chart."
               exit 1
@@ -97,6 +112,10 @@ jobs:
               echo "::error::no tag was provided and charts/${app}/Chart.yaml has no appVersion."
               exit 1
             fi
+            if ! valid_tag "$tag"; then
+              echo "::error::invalid tag '${tag}' - not a valid image tag."
+              exit 1
+            fi
             echo "$app $tag" >> candidates.txt
           else
             allowlist=$(grep -v '^[[:space:]]*#' .github/prd-auto-promote 2>/dev/null | sed '/^[[:space:]]*$/d' || true)
@@ -104,6 +123,10 @@ jobs:
               echo "No charts are enabled for automatic prd promotion (.github/prd-auto-promote is empty). Nothing to do."
             fi
             for app in $allowlist; do
+              if ! valid_app "$app"; then
+                echo "::warning::allowlisted entry '${app}' is not a valid chart name; skipping."
+                continue
+              fi
               if [ ! -f "charts/${app}/values-prd.yaml" ]; then
                 echo "::warning::allowlisted chart '${app}' has no values-prd.yaml; skipping."
                 continue
@@ -111,6 +134,10 @@ jobs:
               tag=$(chart_app_version "$app")
               if [ -z "$tag" ]; then
                 echo "::warning::charts/${app}/Chart.yaml has no appVersion; skipping."
+                continue
+              fi
+              if ! valid_tag "$tag"; then
+                echo "::warning::charts/${app}/Chart.yaml appVersion '${tag}' is not a valid image tag; skipping."
                 continue
               fi
               echo "$app $tag" >> candidates.txt
@@ -126,8 +153,10 @@ jobs:
           TRIGGER_URL: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.html_url || format('{0}/{1}/actions/runs/{2}', github.server_url, github.repository, github.run_id) }}
           TRIGGER_DESC: ${{ github.event_name == 'workflow_run' && 'passing E2E run against non' || format('manual dispatch by @{0}', github.actor) }}
         run: |
+          # Anchored to the two-space indent so only the direct child of the
+          # top-level image block matches, never a nested tag key.
           prd_tag() {
-            sed -n '/^image:/,/^[^[:space:]]/ s/^[[:space:]]*tag:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}[[:space:]]*$/\1/p' "charts/$1/values-prd.yaml" | head -1
+            sed -n '/^image:/,/^[^[:space:]]/ s/^  tag:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}[[:space:]]*$/\1/p' "charts/$1/values-prd.yaml" | head -1
           }
 
           main_sha=$(gh api "repos/${REPO}/git/ref/heads/main" --jq .object.sha)
@@ -154,12 +183,16 @@ jobs:
                 -f ref="refs/heads/${branch}" -f sha="$main_sha" >/dev/null
             fi
 
-            # Change ONLY the image.tag line inside the top-level image block.
+            # Change ONLY the image.tag line: the direct (two-space indented)
+            # child of the top-level image block. The tag value was validated
+            # against the Docker tag grammar, so it cannot carry sed
+            # metacharacters into the replacement.
             cp "$file" /tmp/values-prd-before.yaml
-            sed -i "/^image:/,/^[^[:space:]]/ s|^\([[:space:]]*tag:[[:space:]]*\).*|\1\"${tag}\"|" "$file"
-            changed=$(diff /tmp/values-prd-before.yaml "$file" | grep -c '^<' || true)
-            if [ "$changed" -ne 1 ]; then
-              echo "::error::[${app}] expected exactly one changed line in ${file}, got ${changed}; skipping this chart."
+            sed -i "/^image:/,/^[^[:space:]]/ s|^\(  tag:[[:space:]]*\).*|\1\"${tag}\"|" "$file"
+            removed=$(diff /tmp/values-prd-before.yaml "$file" | grep '^<' || true)
+            changed=$(printf '%s\n' "$removed" | grep -c '^<' || true)
+            if [ "$changed" -ne 1 ] || ! printf '%s\n' "$removed" | grep -q '^<   tag:'; then
+              echo "::error::[${app}] expected exactly one changed line (the image tag) in ${file}, got ${changed}; skipping this chart."
               git checkout -- "$file"
               continue
             fi
