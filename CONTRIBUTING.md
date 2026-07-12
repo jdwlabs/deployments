@@ -35,7 +35,7 @@ This repository follows [Conventional Commits](https://www.conventionalcommits.o
 ```
 feat(authui): add ArgoCD Application for authui service
 fix(charts/porkbun): correct DNS challenge solver config
-chore: bump openclaw chart to 0.4.2
+chore: bump usersrole chart to 0.4.2
 docs: add troubleshooting section to README
 ci: add helm lint to PR workflow
 ```
