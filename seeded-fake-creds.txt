@@ -1,0 +1,2 @@
+# synthetic non-functional credential for gate verification
+export ADMIN_API_SECRET="fXj9uQ2mLp7RwK4tYb8NvE3cZa6HsD1gTiOr5PkM0qBn"
