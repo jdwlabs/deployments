@@ -1,3 +1,10 @@
 /.idea
 # Vendored Helm dependencies (rebuilt from Chart.lock via `helm dependency build`)
 /charts/*/charts/
+
+# Secrets — local credentials must never be committed
+.env*
+*.key
+*.pem
+kubeconfig*
+*.kubeconfig
