@@ -1,0 +1,79 @@
+{
+  "id": 17653706,
+  "name": "Production Gates",
+  "target": "branch",
+  "source_type": "Repository",
+  "source": "jdwlabs/deployments",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "exclude": [],
+      "include": [
+        "refs/heads/main",
+        "refs/heads/release/**",
+        "refs/heads/hotfix/**"
+      ]
+    }
+  },
+  "rules": [
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 1,
+        "dismiss_stale_reviews_on_push": true,
+        "required_reviewers": [],
+        "require_code_owner_review": false,
+        "dismissal_restriction": {
+          "enabled": false,
+          "allowed_actors": []
+        },
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": false,
+        "allowed_merge_methods": [
+          "merge",
+          "squash",
+          "rebase"
+        ]
+      }
+    },
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "required_linear_history"
+    },
+    {
+      "type": "required_signatures"
+    },
+    {
+      "type": "creation"
+    }
+  ],
+  "node_id": "RRS_lACqUmVwb3NpdG9yec5HiVibzgENX8o",
+  "created_at": "2026-06-13T23:41:31.336-05:00",
+  "updated_at": "2026-06-18T02:39:18.556-05:00",
+  "bypass_actors": [
+    {
+      "actor_id": null,
+      "actor_type": "OrganizationAdmin",
+      "bypass_mode": "always"
+    },
+    {
+      "actor_id": 4065387,
+      "actor_type": "Integration",
+      "bypass_mode": "always"
+    }
+  ],
+  "current_user_can_bypass": "always",
+  "_links": {
+    "self": {
+      "href": "https://api.github.com/repos/jdwlabs/deployments/rulesets/17653706"
+    },
+    "html": {
+      "href": "https://github.com/jdwlabs/deployments/rules/17653706"
+    }
+  }
+}
