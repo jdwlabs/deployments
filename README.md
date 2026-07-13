@@ -103,7 +103,7 @@ apps:
 
 ## Prerequisites
 
-The following must exist in the cluster before deploying (all manged by the platfom repo):
+The following must exist in the cluster before deploying (all managed by the platform repo):
 
 - Tenant namespaces provisioned by the platform
 - External Secrets Operator (ESO) installed
