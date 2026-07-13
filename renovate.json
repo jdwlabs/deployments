@@ -1,0 +1,9 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": [
+    "Renovate is the single owner of dependency updates for this repo; keep repository-level (UI) Dependabot disabled.",
+    "Covers: GitHub Actions pins and Helm chart dependencies (charts/*/Chart.yaml). Chart dependencies are currently all local file://../common references, which Renovate correctly leaves alone — the helm manager is kept enabled so any future registry-backed dependency is picked up automatically.",
+    "First-party image tags in values-prd.yaml are release pins managed by the app release process, not third-party dependencies, so they are deliberately not managed here."
+  ],
+  "extends": ["github>jdwlabs/.github"]
+}
