@@ -12,3 +12,5 @@ permissions:
 jobs:
   scan:
     uses: jdwlabs/.github/.github/workflows/security-scan.yml@ci/org-reusable-workflows
+    with:
+      config-ref: ci/org-reusable-workflows
