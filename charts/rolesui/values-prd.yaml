@@ -1,5 +1,5 @@
 image:
-  tag: "0.5.4"
+  tag: "0.5.4-promotion-demo"
 
 resources:
   requests:
