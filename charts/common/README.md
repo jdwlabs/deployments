@@ -29,7 +29,7 @@ App `Chart.yaml`:
 ```yaml
 dependencies:
   - name: common
-    version: 0.1.0
+    version: 0.2.0
     repository: file://../common
 ```
 
@@ -50,8 +50,8 @@ carries scaffold shared by all apps.
 The library reads the same values every app chart already defines: `replicaCount`, `autoscaling`,
 `revisionHistoryLimit`, `image`, `imagePullSecrets`, `nameOverride`, `fullnameOverride`, `serviceAccount`,
 `podAnnotations`, `podLabels`, `podSecurityContext`, `securityContext`, `service`, `ingress`, `resources`,
-`livenessProbe`, `readinessProbe`, `volumes`, `volumeMounts`, `nodeSelector`, `tolerations`, `affinity`, `envs`,
-`envSecrets`.
+`livenessProbe`, `readinessProbe`, `startupProbe`, `volumes`, `volumeMounts`, `nodeSelector`, `tolerations`,
+`affinity`, `envs`, `envSecrets`.
 
 Notable semantics:
 
@@ -60,6 +60,8 @@ Notable semantics:
   scales a workload to zero by accident.
 - `extraEnv` — list of `{name, value}` pairs rendered *before* `envs`/`envSecrets`; values pass through `tpl`, so apps
   can inject chart-derived data, e.g. `value: '{{ .Values.image.tag | default .Chart.AppVersion }}'`.
+- `startupProbe` — optional; rendered only when set. Use it for slow-booting workloads (e.g. JVM apps) so liveness
+  and readiness only take over once the app is actually up.
 - `service.targetPort` — optional; when unset the Service targets the named container port `http` (which the shared
   Deployment binds to `service.port`), so both forms hit the same port.
 - `envSecrets` — list of `{secretKey, secretName}` (plus `key`/`property` consumed by per-app ExternalSecret
