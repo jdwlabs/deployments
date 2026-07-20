@@ -2,4 +2,4 @@ apiVersion: v2
 name: common
 description: Library chart providing the shared workload scaffold (deployment, service, service account, HPA, HTTPRoute, connection test) for jdwlabs app charts
 type: library
-version: 0.1.0
+version: 0.2.0

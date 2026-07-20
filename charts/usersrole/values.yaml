@@ -58,6 +58,18 @@ resources:
     memory: "1Gi"
     cpu: "1"
 
+# JVM boot is slow and gets slower under tight CPU limits: a prior right-size
+# without a startup probe let liveness (35s budget) kill pods mid-boot and
+# caused a ~10min prod outage. 30 x 10s allows up to 5 minutes of warmup;
+# liveness and readiness only take over once this passes. Probes the same
+# actuator liveness endpoint so a passing startup check implies liveness.
+startupProbe:
+  httpGet:
+    path: /actuator/health/liveness
+    port: http
+  periodSeconds: 10
+  failureThreshold: 30
+
 livenessProbe:
   httpGet:
     path: /actuator/health/liveness
