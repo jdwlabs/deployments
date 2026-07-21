@@ -1,8 +1,14 @@
 revisionHistoryLimit: 1
 
+# Memory request trimmed 1Gi -> 512Mi in non only: live usage sits around
+# 224Mi, so 512Mi keeps >2x headroom while freeing scheduler capacity. Safe
+# only because the startupProbe now covers the slow JVM boot window — a prior
+# trim without it let liveness kill pods mid-boot and cause a prod outage.
+# The 2Gi limit is deliberately unchanged (boot-time spike allowance). prd
+# follows in a separate change only after this soaks in non.
 resources:
   requests:
-    memory: "1Gi"
+    memory: "512Mi"
     cpu: "500m"
   limits:
     memory: "2Gi"
