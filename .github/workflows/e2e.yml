@@ -1,9 +1,17 @@
 name: E2E
 
+# Manual-only: this job needs the self-hosted ARC runner (staging is only
+# reachable from inside the cluster network), and ARC is dormant — CI runs
+# exclusively on GitHub-hosted runners. An automatic trigger would queue
+# forever. Re-enable ARC first (platform OPERATIONS.md "Self-hosted CI
+# runners (ARC)"), then dispatch this manually or restore the
+# repository_dispatch trigger (types: [apps-deployed]).
 on:
-  repository_dispatch:
-    types:
-      - apps-deployed
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'apps repo SHA to test (published image tag)'
+        required: true
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -23,7 +31,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: jdwlabs/apps
-          ref: ${{ github.event.client_payload.sha }}
+          ref: ${{ inputs.sha }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
