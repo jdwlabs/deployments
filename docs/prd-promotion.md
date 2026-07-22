@@ -26,9 +26,13 @@ with releases whose chart content did not change.
 
 1. The apps-repo pipeline releases a project, pushes its image, bumps the
    chart `appVersion` here (direct bot commit — unchanged, non-only), and
-   dispatches the `apps-deployed` event.
-2. The `E2E` workflow runs the platform E2E suite against non.
-3. On E2E **success**, `Promote PRD` runs:
+   dispatches the `apps-deployed` event. (The dispatch is currently a no-op:
+   the `E2E` workflow is manual-only because it needs the dormant self-hosted
+   ARC runner — see the note in `e2e.yml`.)
+2. The `E2E` workflow runs the platform E2E suite against non — today via
+   `workflow_dispatch` with the published apps SHA, once ARC is re-enabled.
+3. On E2E **success**, `Promote PRD` runs (it also supports direct
+   `workflow_dispatch` — the current day-to-day path):
    - For every chart listed in [`.github/prd-auto-promote`](../.github/prd-auto-promote)
      whose `appVersion` differs from the pinned prd tag, it opens (or
      force-refreshes) a single-commit PR on branch `chore/promote-<app>-prd`
