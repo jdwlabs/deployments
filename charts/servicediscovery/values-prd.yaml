@@ -11,6 +11,41 @@ ingress:
     - host: servicediscovery.prd.jdwlabs.com
 
 serviceDiscovery:
+  # Schema for the main-line servicediscovery binary: /api/remotes serves this
+  # map to the container shell, /api/micro-frontends drives its nav and lazy
+  # routes. Both keys are required — the shell only falls back to its build-time
+  # manifest when the fetch itself fails, so a well-formed `null` reaches
+  # setRemoteDefinitions() unguarded and blanks the page.
+  remotes:
+    authui: https://authui.prd.jdwlabs.com
+    usersui: https://usersui.prd.jdwlabs.com
+    rolesui: https://rolesui.prd.jdwlabs.com
+  microFrontends:
+    - name: authui
+      path: auth
+      remoteName: authui
+      moduleName: ./Routes
+      url: https://authui.prd.jdwlabs.com
+      icon: login
+      title: Auth
+      description: This contains sign in and sign up functionality
+    - name: usersui
+      path: users
+      remoteName: usersui
+      moduleName: ./Routes
+      url: https://usersui.prd.jdwlabs.com
+      icon: groups
+      title: Users
+      description: This contains viewing users and managing profiles functionality
+    - name: rolesui
+      path: roles
+      remoteName: rolesui
+      moduleName: ./Routes
+      url: https://rolesui.prd.jdwlabs.com
+      icon: lock
+      title: Roles
+      description: This contains viewing and managing roles functionality
+  # Legacy-image schema, kept until both generations converge.
   routeRemotes:
     - path: auth
       name: authui
