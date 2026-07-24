@@ -1,5 +1,10 @@
 revisionHistoryLimit: 1
 
+image:
+  # Always, not IfNotPresent: non re-uses tags as builds land, and a republished
+  # tag otherwise leaves nodes serving whatever layer they cached first.
+  pullPolicy: Always
+
 ingress:
   hosts:
     - host: usersui.non.jdwlabs.com
