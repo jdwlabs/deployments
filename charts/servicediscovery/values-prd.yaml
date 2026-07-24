@@ -1,6 +1,10 @@
 revisionHistoryLimit: 1
 image:
-  tag: "1.0.0"
+  # Digest-pinned, not tag-only: this tag was republished with different content
+  # while nodes still held the first build under `IfNotPresent`, so pods served a
+  # binary predating the /api/remotes endpoint the container shell calls. The
+  # digest makes the pull deterministic regardless of what the tag now points at.
+  tag: "1.0.0@sha256:83d89b0408edf2660512eef2ce28e1e68b7007776d40a124a4ec30d25d3e64df"
 
 ingress:
   hosts:
