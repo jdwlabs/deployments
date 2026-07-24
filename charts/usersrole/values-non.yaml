@@ -1,5 +1,10 @@
 revisionHistoryLimit: 1
 
+image:
+  # Always, not IfNotPresent: non re-uses tags as builds land, and a republished
+  # tag otherwise leaves nodes serving whatever layer they cached first.
+  pullPolicy: Always
+
 # Memory request trimmed 1Gi -> 512Mi in non only: live usage sits around
 # 224Mi, so 512Mi keeps >2x headroom while freeing scheduler capacity. Safe
 # only because the startupProbe now covers the slow JVM boot window — a prior

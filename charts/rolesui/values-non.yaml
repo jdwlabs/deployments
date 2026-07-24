@@ -1,5 +1,8 @@
 image:
   tag: ""
+  # Always, not IfNotPresent: non re-uses tags as builds land, and a republished
+  # tag otherwise leaves nodes serving whatever layer they cached first.
+  pullPolicy: Always
 
 revisionHistoryLimit: 1
 
