@@ -2,8 +2,23 @@
 Shared Deployment scaffold. extraEnv entries are rendered first (before envs
 and envSecrets) and their values pass through tpl, so apps can inject
 chart-derived values such as the resolved image tag.
+
+Charts listing template files in configChecksumTemplates get a checksum/config
+pod annotation over those files' rendered data. A ConfigMap with a static name
+leaves the Deployment spec byte-identical when only its contents change, so
+without this the pods keep serving the config they started with. Only the data
+key is hashed: hashing whole documents would also fold in chart-version labels
+and roll pods on releases that changed no configuration.
 */}}
 {{- define "common.deployment" -}}
+{{- $configChecksum := "" }}
+{{- with .Values.configChecksumTemplates }}
+{{- $rendered := list }}
+{{- range . }}
+{{- $rendered = append $rendered (pick (include (print $.Template.BasePath "/" .) $ | fromYaml) "data" | toYaml) }}
+{{- end }}
+{{- $configChecksum = join "\n" $rendered | sha256sum }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,9 +35,14 @@ spec:
       {{- include "common.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- if or $configChecksum .Values.podAnnotations }}
       annotations:
+        {{- if $configChecksum }}
+        checksum/config: {{ $configChecksum }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
       labels:
         {{- include "common.labels" . | nindent 8 }}

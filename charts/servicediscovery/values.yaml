@@ -102,3 +102,9 @@ envs:
 envSecrets: []
 
 serviceDiscovery: {}
+
+# Roll pods when the rendered config changes; the ConfigMap name is static, so
+# without this the Deployment spec stays identical and pods keep the config they
+# booted with.
+configChecksumTemplates:
+  - configmap.yaml

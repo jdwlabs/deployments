@@ -51,7 +51,7 @@ The library reads the same values every app chart already defines: `replicaCount
 `revisionHistoryLimit`, `image`, `imagePullSecrets`, `nameOverride`, `fullnameOverride`, `serviceAccount`,
 `podAnnotations`, `podLabels`, `podSecurityContext`, `securityContext`, `service`, `ingress`, `resources`,
 `livenessProbe`, `readinessProbe`, `startupProbe`, `volumes`, `volumeMounts`, `nodeSelector`, `tolerations`,
-`affinity`, `envs`, `envSecrets`.
+`affinity`, `envs`, `envSecrets`, `configChecksumTemplates`.
 
 Notable semantics:
 
@@ -62,6 +62,12 @@ Notable semantics:
   can inject chart-derived data, e.g. `value: '{{ .Values.image.tag | default .Chart.AppVersion }}'`.
 - `startupProbe` — optional; rendered only when set. Use it for slow-booting workloads (e.g. JVM apps) so liveness
   and readiness only take over once the app is actually up.
+- `configChecksumTemplates` — optional list of template filenames owned by the app chart (e.g. `configmap.yaml`).
+  Each is rendered and its `data` key hashed into a `checksum/config` pod annotation, so a values-only config change
+  produces a new pod spec and rolls the workload. Without it a ConfigMap with a static name can change contents while
+  the Deployment stays byte-identical, leaving pods serving the config they booted with. Only `data` is hashed, so
+  chart-version label churn does not cause spurious rollouts. Covers git-sourced config only — out-of-band changes
+  such as ExternalSecrets rotation are invisible to a render-time checksum.
 - `service.targetPort` — optional; when unset the Service targets the named container port `http` (which the shared
   Deployment binds to `service.port`), so both forms hit the same port.
 - `envSecrets` — list of `{secretKey, secretName}` (plus `key`/`property` consumed by per-app ExternalSecret
