@@ -28,7 +28,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout Apps Repo at Published SHA
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: jdwlabs/apps
           ref: ${{ inputs.sha }}
