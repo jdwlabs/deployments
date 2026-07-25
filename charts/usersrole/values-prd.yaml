@@ -3,7 +3,10 @@ image:
 
 resources:
   requests:
-    memory: "1Gi"
+    # Sized to roughly 2x steady-state (live ~216Mi) rather than the JVM's peak,
+    # which the 2Gi limit absorbs. The startupProbe is what makes this safe: an
+    # earlier trim without one let liveness kill pods mid-boot.
+    memory: "512Mi"
     cpu: "500m"
   limits:
     memory: "2Gi"
