@@ -92,8 +92,15 @@ jobs:
           valid_app() {
             [[ "$1" =~ ^[a-z0-9-]+$ ]]
           }
+          # An optional @sha256:<64 hex> suffix is accepted so a promotion can
+          # pin content rather than a mutable tag. Docker Hub tags are mutable
+          # and have been overwritten here before, leaving warm nodes serving a
+          # build the tag no longer points at; the digest form is the only
+          # reference that survives that. The added characters are still
+          # sed-safe -- ':' and '@' are not sed metacharacters, and the hex is
+          # anchored to exactly 64 lowercase digits.
           valid_tag() {
-            [[ "$1" =~ ^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$ ]]
+            [[ "$1" =~ ^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}(@sha256:[a-f0-9]{64})?$ ]]
           }
 
           : > candidates.txt
