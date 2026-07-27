@@ -77,6 +77,14 @@ Revert the promotion PR. The revert re-pins the previous tag and ArgoCD syncs
 it like any other merge. Image tags are never deleted from the registry, so a
 revert is always executable.
 
+That invariant covers every tag, including ones no environment points at any
+more. `jdwlabs/rolesui:0.5.4-promotion-demo` — an artifact of a promotion
+workflow demonstration that briefly served prd — is retained for this reason
+rather than by oversight. Deleting it would buy tidiness at the cost of the
+guarantee above, and the guarantee is what makes a rollback dependable at the
+moment it is actually needed. Provenance, not deletion, is the control: prd
+pins digests, so what a tag name suggests never decides what runs.
+
 ## Backlog burn-down plan (current prd gap)
 
 **Status: plan only — do not execute until the two-generation divergence is
