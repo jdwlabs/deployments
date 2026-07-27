@@ -1,0 +1,57 @@
+# Documented exceptions to tools/check-image-pins.py's digest-pin requirement.
+#
+# Every entry MUST carry a non-empty `reason` explaining why the exception is
+# deliberate. An entry that no longer matches an actual unpinned reference is
+# treated as stale and fails the check — remove it once the file is fixed or
+# no longer exists.
+#
+# `path` is repo-relative, matching the values-<env>.yaml file the exception
+# applies to (one image per chart per environment in this repo, so the file
+# path alone is an unambiguous key).
+exceptions:
+  - path: charts/authui/values-non.yaml
+    reason: >-
+      non intentionally tracks Chart.appVersion under imagePullPolicy: Always
+      rather than a digest pin, so a new build reaches the environment without
+      a promotion PR. This is a deliberate rapid-iteration tradeoff for a
+      non-production environment, not an oversight — see the inline comment
+      in this file for the incident that motivated the Always pull policy.
+
+  - path: charts/container/values-non.yaml
+    reason: >-
+      non intentionally tracks Chart.appVersion under imagePullPolicy: Always
+      rather than a digest pin, so a new build reaches the environment without
+      a promotion PR. This is a deliberate rapid-iteration tradeoff for a
+      non-production environment, not an oversight — see the inline comment
+      in this file for the incident that motivated the Always pull policy.
+
+  - path: charts/rolesui/values-non.yaml
+    reason: >-
+      non intentionally tracks Chart.appVersion under imagePullPolicy: Always
+      rather than a digest pin, so a new build reaches the environment without
+      a promotion PR. This chart's overlay even sets image.tag explicitly to
+      "" to make that fallback obvious. Deliberate rapid-iteration tradeoff
+      for a non-production environment, not an oversight.
+
+  - path: charts/servicediscovery/values-non.yaml
+    reason: >-
+      non intentionally tracks Chart.appVersion under imagePullPolicy: Always
+      rather than a digest pin, so a new build reaches the environment without
+      a promotion PR. This is the same class of reference that caused the
+      servicediscovery outage in prd, but here it is a deliberate,
+      documented tradeoff (see this file's inline comment) rather than an
+      accident — prd itself is digest-pinned below.
+
+  - path: charts/usersrole/values-non.yaml
+    reason: >-
+      non intentionally tracks Chart.appVersion under imagePullPolicy: Always
+      rather than a digest pin, so a new build reaches the environment without
+      a promotion PR. Deliberate rapid-iteration tradeoff for a
+      non-production environment, not an oversight.
+
+  - path: charts/usersui/values-non.yaml
+    reason: >-
+      non intentionally tracks Chart.appVersion under imagePullPolicy: Always
+      rather than a digest pin, so a new build reaches the environment without
+      a promotion PR. Deliberate rapid-iteration tradeoff for a
+      non-production environment, not an oversight.
