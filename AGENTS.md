@@ -79,6 +79,24 @@ Traceability lives in the commit message and PR description; comments
 should explain *why* the config is what it is so they stay meaningful
 after the ticket closes.
 
+## Tooling Traps
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `rtk helm template` output looks complete but is truncated — even redirected to a file | RTK caps captured output regardless of the redirect target | `rtk proxy helm template ...` for the untruncated render |
+| A resource looks unowned/unmanaged in `kubectl get -o json` | `managedFields` is hidden by default | Add `--show-managed-fields` |
+| Several SSA field managers on an object (e.g. `helm`, `argocd-controller`) make it look like ArgoCD doesn't track it, so it seems safe to leave un-pruned | Field managers (`managedFields`) answer *who set which field*; ArgoCD prune/ownership is decided by the `argocd.argoproj.io/tracking-id` **annotation** — a different mechanism from `argocd-cm`'s `application.instanceLabelKey` (a label, used for a different purpose) | Check the `tracking-id` annotation, not `managedFields`, when deciding whether ArgoCD tracks/will-prune a resource |
+| `argocd app list` fails `argocd-cm not found` right after `argocd login --core` | `--core` needs no token — it authenticates from the kubeconfig — but it reads the target **namespace from the kube context**, not from where `argocd-cm` actually lives | Point the kube context at the `argocd` namespace (`kubectl config set-context --current --namespace=argocd`), or pass `-n argocd` per surrounding tool docs |
+| Comparing a registry digest for an image tag against a pod's `imageID` reports drift that isn't real | A tag can be an OCI **index** (multi-arch manifest list); its digest is never equal to one of its own per-platform **child manifest** digests, even for byte-identical content — and `imageID` can show a different repo name than the spec, since containerd dedups pulled content by config digest and reports it under whichever reference resolved first | Resolve both sides to the same manifest level before comparing (`docker buildx imagetools inspect <ref>`); if repo names disagree, compare config/layer digests, not just the top-level one. Pinning `values-prd.yaml` to `tag@sha256:<digest>` through the promotion workflow removes the ambiguity going forward |
+
+## Verify Before You Start
+
+Ticket evidence more than ~a week old (or gathered in a different investigation) is a hypothesis, not ground truth. Before acting on it:
+
+- Re-confirm the ticket's premises against live state — don't build on a stale finding
+- State the scope you searched before claiming something is absent, orphaned, or drifted ("checked all N apps", "every pod in the release") — one sample is not the whole set
+- A disproved premise is a valuable result: record it on the ticket, don't quietly work around it
+
 ## Constraints
 
 - `argocd app sync` is NEVER run autonomously — sync is triggered by Git merge
