@@ -63,6 +63,18 @@ jobs:
             done
           done
 
+  image-pin-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.x"
+      - name: Install dependencies
+        run: pip install PyYAML
+      - name: Reject mutable image references
+        run: python3 tools/check-image-pins.py
+
   validate-config:
     runs-on: ubuntu-latest
     steps:
