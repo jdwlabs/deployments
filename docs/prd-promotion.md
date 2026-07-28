@@ -197,3 +197,21 @@ cannot be promoted independently across the generation boundary:
 After the gap is closed, add apps to `.github/prd-auto-promote` one at a
 time. From then on every passing non E2E run proposes at most a one-version
 step per app, and the review burden per PR is small.
+
+## Why the release App keeps a pull-request-scoped bypass
+
+The release App reaches `main` only through a pull request it opens and
+auto-merges. Its ruleset bypass is `pull_request`, not `always`: it may merge a
+pull request that has no human approval, but it cannot push to `main` directly.
+
+The bypass cannot be removed outright. All three rulesets protecting `main`
+require one approving review, and a GitHub App cannot approve its own pull
+request — so removing it would need a second approving identity, which is the
+same standing exception one layer up. A path-scoped bypass is not available
+either: bypass actors are scoped to the ruleset, and a bypass actor skips rules,
+so a file-path rule could never constrain the App.
+
+Merged commits on `main` are unsigned despite `required_signatures`, because
+rebase-merge re-creates commits and discards the signature GitHub applies to the
+API-minted commit on the branch. That is a repo-wide property of rebase-only
+merging, not specific to the release path.

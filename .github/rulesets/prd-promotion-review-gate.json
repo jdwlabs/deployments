@@ -47,7 +47,7 @@
     {
       "actor_id": 4065387,
       "actor_type": "Integration",
-      "bypass_mode": "always"
+      "bypass_mode": "pull_request"
     }
   ],
   "current_user_can_bypass": "always",
