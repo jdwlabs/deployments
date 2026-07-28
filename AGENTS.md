@@ -11,7 +11,7 @@ jdwlabs `deployments` defines what runs on the jdwlabs Kubernetes cluster. It co
 - `argocd/<env>/config.yaml` — app definitions for that environment (`non`, `prd`), expanded into ArgoCD Applications by the platform ApplicationSet
 - `charts/<name>/` — custom Helm charts for jdwlabs services (`values.yaml` base + `values-<env>.yaml` overrides)
 - `charts/common/` — shared library chart consumed by every app chart
-- `tools/` — repo tooling: `generate-index.py` renders the Helm chart index page pushed to GitHub Pages by CI
+- `tools/` — repo tooling: `generate-index.py` renders the Helm chart index page pushed to GitHub Pages by CI; `check-image-pins.py` fails CI on any mutable image reference (unit tests alongside it in `test_check_image_pins.py`)
 
 ## Key Concepts
 
@@ -122,6 +122,7 @@ Ticket evidence more than ~a week old (or gathered in a different investigation)
 - `kubectl apply` and `kubectl delete` are out of scope — workload management is ArgoCD's job
 - Read-only `kubectl get`, `kubectl describe`, `kubectl logs` are safe
 - `targetRevision` must always be `HEAD` or a semver tag — never a branch name other than the default
+- Every image reference in `charts/` must be digest-pinned as `<tag>@sha256:<index digest>` — the **index** (manifest-list) digest, never a per-arch child manifest digest — or carry an entry in `tools/image-pin-allowlist.yaml` keyed on path + repository + tag with an inline reason. Run `python3 tools/check-image-pins.py` before pushing; a digest-only tag (`tag: "@sha256:..."`) is rejected because the common chart concatenates `repository:tag` and would render something unpullable that `helm template` still accepts
 - No secrets in this repo — reference Vault paths via ExternalSecret manifests only
 
 ## References
