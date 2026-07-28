@@ -48,12 +48,62 @@ gh workflow run promote-prd.yml -R jdwlabs/deployments \
   -f app=<chart> [-f tag=<image-tag>]
 ```
 
+## Digest pinning
+
+`values-prd.yaml` may only ever hold `<tag>@sha256:<digest>`, never a bare
+tag. A bare tag is a mutable reference: republishing it changes what a node
+pulls next, and under `imagePullPolicy: IfNotPresent` already-warm nodes go on
+serving the old build while every probe stays green. That is not theoretical —
+it is how a republished `servicediscovery:1.0.0` kept prd serving a binary
+that predated the `/api/remotes` handler. `tools/check-image-pins.py` fails CI
+on any unpinned prd reference, so a promotion PR carrying a bare tag cannot
+merge in the first place.
+
+The promotion workflow therefore resolves the tag itself, whichever path
+supplied it:
+
+| Tag source | What gets written to `values-prd.yaml` |
+|---|---|
+| Chart `appVersion` (auto-promotion, or dispatch with no `-f tag=`) | `appVersion@sha256:<index digest>`, resolved against the registry |
+| `-f tag=<bare tag>` | `<bare tag>@sha256:<index digest>`, resolved against the registry |
+| `-f tag=<tag>@sha256:<digest>` | used verbatim — the digest was chosen deliberately (a rollback pins a digest the tag no longer points at), so it is never re-resolved |
+
+Resolution is `tools/resolve-image-digest.sh <repository> <tag>`, which reads
+the registry manifest API and prints the digest of the manifest the tag
+addresses. If it cannot resolve, the promotion **fails** — it never falls back
+to the bare tag, because a fallback is exactly the mutable reference the pin
+exists to prevent. Common causes and fixes:
+
+- *tag does not exist* — the release pipeline has not pushed it yet; re-run
+  the promotion once the image is published.
+- *registry unreachable / rate-limited* — the resolver already retries; re-run,
+  or dispatch with an explicit `-f tag='<tag>@sha256:<index digest>'`.
+- *private repository* — the resolver only does anonymous pulls; registry
+  credentials would have to be wired into the workflow.
+
+### Index digest, never a child digest
+
+For a multi-arch tag the pinned digest is the **manifest index** (manifest
+list) digest, not a per-architecture child manifest digest. Both are valid
+pull references, so a child digest deploys fine and then quietly poisons every
+later comparison: a pod reports the child manifest its node pulled in
+`.status.containerStatuses[].imageID`, `docker buildx imagetools inspect`
+reports the index, and containerd deduplicates by config digest — so a
+child-pinned chart reads as drift against tooling that is in fact in sync. The
+resolver offers index media types first and never sends a platform hint, and
+it refuses any response it cannot classify. A tag that genuinely has no index
+(single-platform image) resolves to its only digest, and the run log says so
+explicitly.
+
 ### Guardrails
 
 - One chart per PR; the workflow verifies the diff is exactly one line — and
   that the line is the image tag — and aborts that chart otherwise.
 - `app` and `tag` values are validated up front (chart-name and Docker image
   tag grammar) before they reach any file path, git ref, or edit command.
+- Every candidate is re-checked for a digest before any PR is opened, so a
+  bare tag cannot reach `values-prd.yaml` even if the resolution step is later
+  changed to permit one.
 - The promotion branch is rebuilt from `main` on every run — reruns are
   idempotent and PRs never accumulate stale commits.
 - The commit is created through the GitHub contents API, so it is signed and

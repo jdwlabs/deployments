@@ -78,6 +78,21 @@ jobs:
       - name: Reject mutable image references
         run: python3 tools/check-image-pins.py
 
+  promotion-tooling:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Shellcheck the digest resolver
+        run: shellcheck -x tools/resolve-image-digest.sh tools/tests/test-resolve-image-digest.sh
+      # Offline only: the network assertions resolve real tags against Docker
+      # Hub anonymously, and shared runner egress IPs hit the anonymous rate
+      # limit unpredictably. Run them locally (drop the env var) when changing
+      # the resolver; the promotion workflow exercises the live path for real.
+      - name: Digest resolver tests
+        env:
+          RESOLVE_DIGEST_TESTS_OFFLINE: "1"
+        run: bash tools/tests/test-resolve-image-digest.sh
+
   validate-config:
     runs-on: ubuntu-latest
     steps:

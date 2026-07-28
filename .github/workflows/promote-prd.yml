@@ -13,6 +13,12 @@ name: Promote PRD
 # - workflow_dispatch: promote a single chart on demand, optionally to an
 #   explicit tag (defaults to the chart's current appVersion).
 #
+# Whichever path supplies the tag, prd is only ever pinned to
+# <tag>@sha256:<index digest>: a bare tag is resolved against the registry
+# first, and a promotion that cannot be resolved fails instead of falling back
+# to the mutable tag. An explicitly dispatched tag that already carries a
+# digest is used exactly as given.
+#
 # See docs/prd-promotion.md for the full contract and runbook.
 
 on:
@@ -28,7 +34,7 @@ on:
         required: true
         type: string
       tag:
-        description: 'Image tag to promote prd to (defaults to the chart appVersion)'
+        description: 'Image tag to promote prd to (defaults to the chart appVersion). A bare tag is resolved to its index digest; pass tag@sha256:<digest> to pin an exact one.'
         required: false
         type: string
         default: ''
@@ -103,7 +109,42 @@ jobs:
             [[ "$1" =~ ^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}(@sha256:[a-f0-9]{64})?$ ]]
           }
 
+          # Helm's own override rule for the image map: a key set in the prd
+          # overlay wins, otherwise the chart's base values.yaml supplies it.
+          image_repository() {
+            sed -n '/^image:/,/^[^[:space:]]/ s/^  repository:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}[[:space:]]*$/\1/p' "$1" | head -1
+          }
+          effective_repository() {
+            local repo
+            repo=$(image_repository "charts/$1/values-prd.yaml")
+            [ -n "$repo" ] || repo=$(image_repository "charts/$1/values.yaml")
+            printf '%s' "$repo"
+          }
+
+          # Turns a bare tag into the only reference prd is allowed to pin:
+          # <tag>@sha256:<index digest>. A bare tag is mutable - republishing it
+          # changes what a node pulls next, and under IfNotPresent already-warm
+          # nodes keep serving the old build while every probe stays green.
+          #
+          # A tag that already carries a digest is passed through untouched. It
+          # was chosen deliberately (a rollback pins a digest the tag no longer
+          # points at), so re-resolving it would silently move the pin.
+          pin_reference() {
+            local app="$1" tag="$2" repo digest
+            case "$tag" in
+              *@sha256:*) printf '%s' "$tag"; return 0 ;;
+            esac
+            repo=$(effective_repository "$app")
+            if [ -z "$repo" ]; then
+              echo "::error::[${app}] neither charts/${app}/values-prd.yaml nor charts/${app}/values.yaml sets image.repository, so '${tag}' cannot be resolved to a digest." >&2
+              return 1
+            fi
+            digest=$(bash tools/resolve-image-digest.sh "$repo" "$tag") || return 1
+            printf '%s@%s' "$tag" "$digest"
+          }
+
           : > candidates.txt
+          unresolved=0
           if [ "$EVENT" = "workflow_dispatch" ]; then
             app="$INPUT_APP"
             if ! valid_app "$app"; then
@@ -123,7 +164,11 @@ jobs:
               echo "::error::invalid tag '${tag}' - not a valid image tag."
               exit 1
             fi
-            echo "$app $tag" >> candidates.txt
+            if ! ref=$(pin_reference "$app" "$tag"); then
+              echo "::error::[${app}] could not resolve '${tag}' to an image index digest, so there is nothing safe to promote. prd pins digests, never bare tags - see docs/prd-promotion.md. Re-run once the tag is published and the registry is reachable, or dispatch with an explicit -f tag='<tag>@sha256:<index digest>'."
+              exit 1
+            fi
+            echo "$app $ref" >> candidates.txt
           else
             allowlist=$(grep -v '^[[:space:]]*#' .github/prd-auto-promote 2>/dev/null | sed '/^[[:space:]]*$/d' || true)
             if [ -z "$allowlist" ]; then
@@ -147,11 +192,46 @@ jobs:
                 echo "::warning::charts/${app}/Chart.yaml appVersion '${tag}' is not a valid image tag; skipping."
                 continue
               fi
-              echo "$app $tag" >> candidates.txt
+              # Unlike the skips above, an unresolvable digest is an error, not
+              # a warning: the chart is enabled for promotion and its tag exists
+              # in the chart, so silence here would look like "nothing to
+              # promote" while auto-promotion was in fact broken. Remaining
+              # charts are still processed so one run surfaces every problem,
+              # then the run fails.
+              if ! ref=$(pin_reference "$app" "$tag"); then
+                echo "::error::[${app}] could not resolve appVersion '${tag}' to an image index digest; skipping this chart and failing the run. prd pins digests, never bare tags - see docs/prd-promotion.md."
+                unresolved=$((unresolved + 1))
+                continue
+              fi
+              echo "$app $ref" >> candidates.txt
             done
           fi
           echo "Promotion candidates:"
           cat candidates.txt || true
+
+          # Last line of defence, re-checking what actually reaches the next
+          # step rather than trusting the branch that produced it. A bare tag
+          # here would open a PR that cannot merge (the image-pin check rejects
+          # mutable references) and, were it merged anyway, would hand prd a
+          # reference whose content can change underneath it.
+          while read -r app ref; do
+            [ -z "$app" ] && continue
+            if ! valid_tag "$ref"; then
+              echo "::error::[${app}] candidate '${ref}' is not a valid image reference; refusing to open a promotion PR."
+              exit 1
+            fi
+            case "$ref" in
+              *@sha256:*) ;;
+              *)
+                echo "::error::[${app}] candidate '${ref}' is not digest-pinned; refusing to open a promotion PR."
+                exit 1 ;;
+            esac
+          done < candidates.txt
+
+          if [ "$unresolved" -ne 0 ]; then
+            echo "::error::${unresolved} allowlisted chart(s) could not be resolved to an image index digest; failing rather than promoting a mutable tag."
+            exit 1
+          fi
 
       - name: Open promotion pull requests
         env:
@@ -191,9 +271,10 @@ jobs:
             fi
 
             # Change ONLY the image.tag line: the direct (two-space indented)
-            # child of the top-level image block. The tag value was validated
-            # against the Docker tag grammar, so it cannot carry sed
-            # metacharacters into the replacement.
+            # child of the top-level image block. The reference was validated
+            # against the Docker tag grammar plus an anchored 64-hex digest
+            # suffix, so it cannot carry sed metacharacters into the
+            # replacement.
             cp "$file" /tmp/values-prd-before.yaml
             sed -i "/^image:/,/^[^[:space:]]/ s|^\(  tag:[[:space:]]*\).*|\1\"${tag}\"|" "$file"
             removed=$(diff /tmp/values-prd-before.yaml "$file" | grep '^<' || true)
@@ -237,6 +318,7 @@ jobs:
           ## Reviewer checklist
 
           - [ ] The target tag's image is verified to supersede the currently pinned image (two release generations may coexist; a numerically newer-looking tag is not proof).
+          - [ ] The digest is the tag's manifest **index** digest, as resolved in this run's log - not a per-architecture child digest, which would read as drift against every other tool.
           - [ ] CI is green: lint, template (values-prd stack renders), validate-config.
           - [ ] Rollback plan understood: revert this PR to re-pin \`${current}\`; ArgoCD syncs the revert like any other merge.
 
