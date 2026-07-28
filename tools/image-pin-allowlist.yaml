@@ -5,11 +5,24 @@
 # treated as stale and fails the check — remove it once the file is fixed or
 # no longer exists.
 #
-# `path` is repo-relative, matching the values-<env>.yaml file the exception
-# applies to (one image per chart per environment in this repo, so the file
-# path alone is an unambiguous key).
+# An entry is keyed on all three of `path`, `repository` and `tag`, not on
+# `path` alone. A path-only key would keep excusing whatever that file's image
+# block later turned into: swapping the repository, or replacing an empty tag
+# with `latest`, would inherit an exemption written about a different
+# reference, and the reason text would quietly stop being true. Keying on the
+# reference itself makes an exception expire the moment what it excused
+# changes, and the stale-entry check then forces the leftover row out.
+#
+# `path` is repo-relative. `tag` is the effective tag after values.yaml and the
+# overlay are merged — quote it, and use "" for "no tag set, falls back to
+# Chart.appVersion".
+#
+# Malformed references (digest-only tags, unquoted numeric tags) are NOT
+# allowlistable — no reason makes an unresolvable reference correct.
 exceptions:
   - path: charts/authui/values-non.yaml
+    repository: jdwlabs/authui
+    tag: ""
     reason: >-
       non intentionally tracks Chart.appVersion under imagePullPolicy: Always
       rather than a digest pin, so a new build reaches the environment without
@@ -18,6 +31,8 @@ exceptions:
       in this file for the incident that motivated the Always pull policy.
 
   - path: charts/container/values-non.yaml
+    repository: jdwlabs/container
+    tag: ""
     reason: >-
       non intentionally tracks Chart.appVersion under imagePullPolicy: Always
       rather than a digest pin, so a new build reaches the environment without
@@ -26,6 +41,8 @@ exceptions:
       in this file for the incident that motivated the Always pull policy.
 
   - path: charts/rolesui/values-non.yaml
+    repository: jdwlabs/rolesui
+    tag: ""
     reason: >-
       non intentionally tracks Chart.appVersion under imagePullPolicy: Always
       rather than a digest pin, so a new build reaches the environment without
@@ -34,15 +51,19 @@ exceptions:
       for a non-production environment, not an oversight.
 
   - path: charts/servicediscovery/values-non.yaml
+    repository: jdwlabs/servicediscovery
+    tag: ""
     reason: >-
       non intentionally tracks Chart.appVersion under imagePullPolicy: Always
       rather than a digest pin, so a new build reaches the environment without
       a promotion PR. This is the same class of reference that caused the
       servicediscovery outage in prd, but here it is a deliberate,
       documented tradeoff (see this file's inline comment) rather than an
-      accident — prd itself is digest-pinned below.
+      accident — prd itself is digest-pinned.
 
   - path: charts/usersrole/values-non.yaml
+    repository: jdwlabs/usersrole
+    tag: ""
     reason: >-
       non intentionally tracks Chart.appVersion under imagePullPolicy: Always
       rather than a digest pin, so a new build reaches the environment without
@@ -50,8 +71,28 @@ exceptions:
       non-production environment, not an oversight.
 
   - path: charts/usersui/values-non.yaml
+    repository: jdwlabs/usersui
+    tag: ""
     reason: >-
       non intentionally tracks Chart.appVersion under imagePullPolicy: Always
       rather than a digest pin, so a new build reaches the environment without
       a promotion PR. Deliberate rapid-iteration tradeoff for a
       non-production environment, not an oversight.
+
+  - path: charts/common/templates/_test-connection.yaml
+    repository: busybox
+    tag: ""
+    reason: >-
+      Helm `test` hook, not a workload. Helm only materialises it on an
+      explicit `helm test`, and ArgoCD — which is the only thing that applies
+      these charts — does not create it during sync: all six app charts run in
+      both environments and no `-test-connection` Pod exists anywhere in the
+      cluster. The failure mode this check exists to stop therefore cannot
+      occur here: nothing pulls this reference on the delivery path, and an
+      implicit `:latest` makes Kubernetes default imagePullPolicy to Always,
+      so even a manual `helm test` re-pulls rather than serving a stale cached
+      layer. A digest pin would be strictly worse — Renovate is scoped to
+      GitHub Actions and Chart.yaml dependencies here, so a pinned busybox in
+      a chart template would freeze at whatever CVEs it shipped with and
+      nothing would ever bump it. Revisit if this Pod ever gains a non-test
+      hook annotation or the image starts carrying real diagnostic tooling.

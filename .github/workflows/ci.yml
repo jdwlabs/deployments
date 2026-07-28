@@ -52,14 +52,15 @@ jobs:
 
       - name: Template charts with each environment values
         run: |
+          # Every values-<env>.yaml, discovered rather than listed: a
+          # hard-coded env list leaves any new overlay unrendered and reading
+          # as passing.
           for chart in charts/*/; do
             name=$(basename "$chart")
-            for env in non prd; do
-              values_file="$chart/values-${env}.yaml"
-              if [ -f "$values_file" ]; then
-                echo "Templating $name ($env)..."
-                helm template "$name" "$chart" -f "$chart/values.yaml" -f "$values_file" > /dev/null
-              fi
+            for values_file in "$chart"values-*.yaml; do
+              [ -f "$values_file" ] || continue
+              echo "Templating $name with $(basename "$values_file")..."
+              helm template "$name" "$chart" -f "$chart/values.yaml" -f "$values_file" > /dev/null
             done
           done
 
@@ -72,6 +73,8 @@ jobs:
           python-version: "3.x"
       - name: Install dependencies
         run: pip install PyYAML
+      - name: Unit-test the image-pin check
+        run: python3 -m unittest discover -s tools -p 'test_*.py' -v
       - name: Reject mutable image references
         run: python3 tools/check-image-pins.py
 

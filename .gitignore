@@ -1,4 +1,6 @@
 /.idea
+__pycache__/
+
 # Vendored Helm dependencies (rebuilt from Chart.lock via `helm dependency build`)
 /charts/*/charts/
 
