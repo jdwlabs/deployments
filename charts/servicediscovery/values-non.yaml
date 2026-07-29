@@ -15,11 +15,11 @@ ingress:
     - host: servicediscovery.non.jdwlabs.com
 
 serviceDiscovery:
-  # Schema for the main-line servicediscovery binary (0.5.x): /api/remotes serves
+  # These two keys are the whole schema the binary decodes: /api/remotes serves
   # this map to the container shell, /api/micro-frontends drives its nav + lazy
-  # routes. The route/component/navigation keys below are the legacy-image schema;
-  # non tracks main-line images, so both schemas are kept until the generations
-  # converge.
+  # routes. The ConfigMap serialises this block wholesale, so anything added
+  # here that the Config struct does not name is shipped and then silently
+  # discarded.
   remotes:
     authui: https://authui.non.jdwlabs.com
     usersui: https://usersui.non.jdwlabs.com
@@ -46,36 +46,6 @@ serviceDiscovery:
       remoteName: rolesui
       moduleName: ./Routes
       url: https://rolesui.non.jdwlabs.com
-      icon: lock
-      title: Roles
-      description: This contains viewing and managing roles functionality
-  routeRemotes:
-    - path: auth
-      name: authui
-      id: authui/Routes
-      entry: https://authui.non.jdwlabs.com/mf-manifest.json
-    - path: users
-      name: usersui
-      id: usersui/Routes
-      entry: https://usersui.non.jdwlabs.com/mf-manifest.json
-    - path: roles
-      name: rolesui
-      id: rolesui/Routes
-      entry: https://rolesui.non.jdwlabs.com/mf-manifest.json
-  componentRemotes:
-    - name: AuthWidgetComponent
-      id: authui/AuthWidget
-      entry: https://authui.non.jdwlabs.com/mf-manifest.json
-  navigationItems:
-    - path: auth
-      icon: login
-      title: Auth
-      description: This contains sign in and sign up functionality
-    - path: users
-      icon: groups
-      title: Users
-      description: This contains viewing users and managing profiles functionality
-    - path: roles
       icon: lock
       title: Roles
       description: This contains viewing and managing roles functionality
