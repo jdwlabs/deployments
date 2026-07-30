@@ -1,0 +1,28 @@
+{{- if and .Values.ingress.enabled .Values.ingress.maxBodySize -}}
+{{/*
+Raises the gateway's client body limit for this route only.
+
+NGINX Gateway Fabric leaves nginx's own `client_max_body_size` default in place
+(1m) and offers no per-route override through the HTTPRoute itself, so an upload
+larger than that is rejected with a 413 at the gateway and never reaches the pod.
+That 413 also carries no CORS headers, which is why a browser reports it as a
+network failure rather than a size limit.
+
+Lives in this chart rather than in `common` because this is the only service
+here that accepts uploads, and NGF only honours a policy sitting in the same
+namespace as its target — which the release namespace already satisfies.
+*/}}
+apiVersion: gateway.nginx.org/v1alpha1
+kind: ClientSettingsPolicy
+metadata:
+  name: {{ include "common.fullname" . }}
+  labels:
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: {{ include "common.fullname" . }}
+  body:
+    maxSize: {{ .Values.ingress.maxBodySize | quote }}
+{{- end }}
