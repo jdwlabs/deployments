@@ -135,68 +135,87 @@ guarantee above, and the guarantee is what makes a rollback dependable at the
 moment it is actually needed. Provenance, not deletion, is the control: prd
 pins digests, so what a tag name suggests never decides what runs.
 
-## Backlog burn-down plan (current prd gap)
+## Current prd position
 
-**Status: plan only — do not execute until the two-generation divergence is
-resolved.**
+The authoritative pins are the chart files themselves, never a table in this
+document — a duplicated table goes stale every release and then reads as a
+hard stop that isn't one. Two commands answer "what is where":
 
-prd pins images from the previous release line on all six apps, while
-`appVersion` tracks the re-baselined main line:
+```bash
+grep -H 'tag:' charts/*/values-prd.yaml     # what prd runs (digest-pinned)
+grep -H appVersion charts/*/Chart.yaml      # what non runs
+```
 
-| Chart | prd pin (legacy line) | appVersion (main line) |
-|---|---|---|
-| authui | 2.0.1 | 2.0.0 |
-| container | 1.4.1 | 2.0.0 |
-| usersui | 1.3.5 | 2.0.0 |
-| rolesui | 0.5.4 | 1.0.0 |
-| usersrole | 0.10.14 | 1.0.0 |
-| servicediscovery | 1.0.0 | 1.0.0 |
+Five charts — `authui`, `container`, `rolesui`, `servicediscovery`, and
+`usersui` — track their current major line. They trail `appVersion` by at most
+a patch or two, which is ordinary promotion lag rather than a version gap, and
+`servicediscovery` is exactly level with it. For these, a numerically newer
+`appVersion` is a normal promotion candidate: the frontend generation split
+that once made the pinned image functionally ahead of the main line — the
+`/api/route-remotes` versus `/api/remotes` remotes contract — is closed.
 
-The pinned legacy images are **functionally ahead** of the main line for some
-apps: the legacy frontend generation consumes `/api/route-remotes` with the
-newer module-federation runtime, while the current main line consumes
-`/api/remotes`. No app is verified converged. A numerically newer tag is
-therefore **not** evidence that promotion is safe — promoting `appVersion`
-today could be a functional downgrade.
+`usersrole` is the exception and the one real gap. Its prd pin is still on the
+`0.x` line while `appVersion` has moved to `1.x`, so it remains a generation
+behind and needs a promotion of its own. It is also the only chart to which
+the cross-generation verification below still applies; for the other five that
+work is finished, not pending.
 
-### Phase 0 — convergence verification (blocking prerequisite)
+`.github/prd-auto-promote` is empty, but that emptiness is not what holds
+auto-promotion back today. The `apps-deployed` → E2E → `Promote PRD` chain
+does not fire at all while the E2E workflow is manual-only (see [How promotion
+works](#how-promotion-works)), so populating the allowlist would change
+nothing until that chain runs. Promotion is a `workflow_dispatch` in the
+meantime.
 
-For each app, before it may be promoted or allowlisted:
+## Promotion sequencing
 
-1. Diff the pinned legacy image's behavior against the main-line image in
-   non: remotes contract (`/api/route-remotes` vs `/api/remotes`), module
-   federation runtime, and user-visible feature set.
-2. Land any missing legacy-line functionality on apps `main` (source
-   convergence), release it, and let the bot bump `appVersion` here.
-3. Record the verification outcome per app before enabling it.
+### Verification before a cross-generation promotion
+
+Applies to `usersrole`, and to any future chart whose prd pin and `appVersion`
+diverge by a major version:
+
+1. Diff the pinned image's behavior against the main-line image in non: API
+   contract, module federation runtime, and user-visible feature set.
+2. Land any functionality that exists only in the pinned line on apps `main`
+   (source convergence), release it, and let the bot bump `appVersion` here.
+3. Record the verification outcome before promoting.
+
+A promotion within the same major line does not need this. It is a patch step,
+and CI plus the code-owner review are the controls.
 
 ### Phase 1 — decoupled services first
 
-`servicediscovery` and `usersrole` have no module-federation coupling.
-Once verified converged: promote one at a time via a bot PR, merge, and soak
-in prd (suggested: 24h, watch error rates and probes) before the next app.
-Note prd resource overrides in `values-prd.yaml` stay as-is — promotion PRs
-only move `image.tag`.
+`servicediscovery` and `usersrole` have no module-federation coupling, so they
+promote independently of the rest. `servicediscovery` is already level;
+`usersrole` is the outstanding one. Promote one at a time via a bot PR, merge,
+and soak in prd (suggested: 24h, watch error rates and probes) before the next
+app. Note prd resource overrides in `values-prd.yaml` stay as-is — promotion
+PRs only move `image.tag`.
 
 ### Phase 2 — the micro-frontend set
 
 `container` (shell) and `authui`/`rolesui`/`usersui` (remotes) share the
-remotes-API contract, and the generation switch changes that contract. They
-cannot be promoted independently across the generation boundary:
+remotes-API contract. They crossed onto the current line together, and they
+move as a set whenever that contract changes:
 
-1. Verify in non that the main-line shell + all main-line remotes work as a
-   set (this is what the E2E suite exercises).
+1. Verify in non that the shell and all remotes work as a set (this is what
+   the E2E suite exercises).
 2. Promote the set in one coordinated window: one bot PR per app (reviewable
    independently), merged consecutively, with ArgoCD expected to converge
    within the window. Schedule in a low-traffic period.
 3. Keep the previous pins recorded in each PR body; rollback is reverting the
    set in reverse order.
 
+A patch step that leaves the remotes contract untouched does not need the full
+coordinated window, but keeping the four aligned is cheaper than reasoning
+each time about which pairings are safe to split.
+
 ### Phase 3 — enable steady-state auto-promotion
 
-After the gap is closed, add apps to `.github/prd-auto-promote` one at a
-time. From then on every passing non E2E run proposes at most a one-version
-step per app, and the review burden per PR is small.
+Once the E2E trigger chain is live again, add apps to
+`.github/prd-auto-promote` one at a time — `servicediscovery` first, being
+decoupled and already level. From then on every passing non E2E run proposes
+at most a one-version step per app, and the review burden per PR is small.
 
 ## Why the release App keeps a pull-request-scoped bypass
 
