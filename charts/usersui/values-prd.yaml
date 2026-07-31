@@ -1,5 +1,5 @@
 image:
-  tag: "2.0.5@sha256:0fa68d736c7b275c2ee8a564a888265f3c20218fc69d04fdbe6b31ac55d0b90c"
+  tag: "2.0.7@sha256:c72fa1853c1c1ae04097b73b000859cc6f2a77438b82a3841a1c5a35ca87dc28"
 
 resources:
   requests:
