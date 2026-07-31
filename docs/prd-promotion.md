@@ -234,3 +234,31 @@ Merged commits on `main` are unsigned despite `required_signatures`, because
 rebase-merge re-creates commits and discards the signature GitHub applies to the
 API-minted commit on the branch. That is a repo-wide property of rebase-only
 merging, not specific to the release path.
+
+## Why the OrganizationAdmin bypass stays at `always`
+
+All five rulesets in this repository also list `OrganizationAdmin` with
+`bypass_mode: always`. That is a different exception from the App's, and it is
+deliberate: it is the break-glass path back into `main` when the gates
+themselves are what is broken — a wedged required check, a ruleset that matches
+more than it should, a revert that has to land while CI cannot run.
+
+Removing it is not free. With no admin bypass, repairing a misconfigured
+ruleset means editing that ruleset in the GitHub UI before any fix can merge,
+which is a slower and less reviewable path than the one being protected.
+
+The control on it is convention, not configuration: the working agreement is
+that `main` is a merge target only, and every change reaches it through a pull
+request. That agreement holds in practice — of the twenty most recent commits
+on `main`, twenty are associated with a merged pull request, bot-authored chart
+bumps included:
+
+```
+$ for sha in $(git log -20 --format=%H origin/main); do \
+    gh api "repos/jdwlabs/deployments/commits/$sha/pulls" --jq 'length'; done
+```
+
+If that ever stops being true, tighten the bypass to `pull_request` rather than
+removing it. That still allows merging an emergency pull request with no
+approving review — GitHub never lets an author approve their own — while
+closing the direct push to `main`.
