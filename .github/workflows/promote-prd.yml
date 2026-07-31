@@ -10,8 +10,18 @@ name: Promote PRD
 # - workflow_run on E2E: after a passing E2E run against non, every chart
 #   listed in .github/prd-auto-promote whose appVersion differs from the
 #   pinned prd tag gets a promotion PR.
+#
+#   This path is dormant, and it is switched off upstream rather than
+#   miswired here. A workflow_run trigger only ever resolves workflow names
+#   within this same repository, and E2E is this repo's own .github/workflows/
+#   e2e.yml - it is not a cross-repo reference to the apps pipeline. E2E is
+#   manual-only while the self-hosted ARC runner it needs is dormant (see the
+#   header of e2e.yml), so no E2E run completes and there is nothing for this
+#   trigger to observe. Restoring auto-promotion is an ARC/E2E task; leave the
+#   trigger as-is so it resumes when E2E does.
 # - workflow_dispatch: promote a single chart on demand, optionally to an
-#   explicit tag (defaults to the chart's current appVersion).
+#   explicit tag (defaults to the chart's current appVersion). The only path
+#   in use today.
 #
 # Whichever path supplies the tag, prd is only ever pinned to
 # <tag>@sha256:<index digest>: a bare tag is resolved against the registry
