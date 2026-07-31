@@ -14,6 +14,30 @@ ingress:
   hosts:
     - host: servicediscovery.non.jdwlabs.com
 
+# Turns on OTLP trace export. The binary already carries the instrumentation and
+# logs "Tracing disabled" until an endpoint is present, so these keys are the
+# whole switch. Merged into the base envs map rather than replacing it.
+#
+# Scoped to this environment on purpose: it is the tracing pilot, so the
+# behaviour change lands somewhere recoverable before prd follows.
+envs:
+  # The scheme is load-bearing and must not be dropped. The exporter parses this
+  # with net/url and reads only the host: without "http://" the hostname is taken
+  # as the URL scheme, the gRPC target resolves to empty, and the unrecognised
+  # scheme additionally selects TLS — so export fails while the service stays
+  # healthy and silent. "http://" is also what selects plaintext, which is what
+  # the collector's OTLP receiver expects here.
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://platform-tempo.monitoring.svc.cluster.local:4317
+  # Pinned next to the port it must agree with: 4317 is the gRPC receiver and
+  # 4318 the HTTP one, so changing one without the other silently stops export.
+  OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+  # The service builds its resource from the environment plus the telemetry SDK
+  # only, and does not merge the SDK default that would otherwise supply a
+  # service name. Without this every span arrives with no service.name, which
+  # leaves the service graph and the trace-to-logs correlation empty even though
+  # spans are being received.
+  OTEL_SERVICE_NAME: servicediscovery
+
 serviceDiscovery:
   # These two keys are the whole schema the binary decodes: /api/remotes serves
   # this map to the container shell, /api/micro-frontends drives its nav + lazy
