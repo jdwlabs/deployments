@@ -219,16 +219,56 @@ at most a one-version step per app, and the review burden per PR is small.
 
 ## Why the release App keeps a pull-request-scoped bypass
 
-The release App reaches `main` only through a pull request it opens and
-auto-merges. Its ruleset bypass is `pull_request`, not `always`: it may merge a
-pull request that has no human approval, but it cannot push to `main` directly.
+The release App reaches `main` only through a pull request it opens and merges.
+Its ruleset bypass is `pull_request`, not `always`: it cannot push to `main`
+directly.
 
-The bypass cannot be removed outright. All three rulesets protecting `main`
-require one approving review, and a GitHub App cannot approve its own pull
-request — so removing it would need a second approving identity, which is the
-same standing exception one layer up. A path-scoped bypass is not available
-either: bypass actors are scoped to the ruleset, and a bypass actor skips rules,
-so a file-path rule could never constrain the App.
+**A `pull_request` bypass does not let the App merge past an unmet requirement.**
+This paragraph previously claimed the opposite — that the bypass let it "merge a
+pull request that has no human approval". That was inferred from the bypass
+name, never tested, and it is wrong. Both merge paths were tried against the
+live rulesets with real App credentials and both were refused:
+
+| Attempt | Result |
+| --- | --- |
+| `gh pr merge --auto` | armed, then sat indefinitely; five pull requests, none merged |
+| `gh pr merge --rebase` (explicit) | `the base branch policy prohibits the merge`, 12 attempts across 4 charts |
+
+Every one had already passed all ten checks. The bypass applies to rules the
+ruleset evaluates for the actor, not to the branch-policy readiness calculation
+that gates the merge itself — so an unsatisfiable approval requirement blocked
+the App exactly as it blocked everyone else. Read a bypass as "exempt from these
+rules", never as "may merge regardless".
+
+Because that assumption did not hold, the requirement was removed rather than
+the bypass widened:
+
+- `required_approving_review_count` is `0` on all three rulesets covering
+  `main`. It was never satisfiable — GitHub forbids approving your own pull
+  request, an App cannot approve the pull request it opened, and the only other
+  org identity is the break-glass owner account. It produced an admin override
+  on every merge instead of a review, which is worse for auditability than no
+  rule, because an admin merge is indistinguishable from bypassing anything else.
+- The `pull_request` rule itself stays, so a pull request is still mandatory and
+  direct pushes to `main` stay blocked for everyone.
+- `require_code_owner_review` is independent of that count, so dropping the
+  count alone would have changed nothing while looking correct. `CODEOWNERS`
+  previously opened with a `* @jdwillmsen` catch-all that made every file owned;
+  removing it leaves `charts/*/values-prd.yaml`, `argocd/prd/` and `/.github/`
+  owned and gated, and everything else unowned.
+
+The net effect is that the non delivery path (`Chart.yaml` `appVersion`) is
+unattended, while prd promotion still requires an explicit human review. The
+nine required status checks, linear history, no-force-push and deletion
+protection are unchanged and are what actually gate merges now.
+
+A path-scoped bypass is still not available: bypass actors are scoped to the
+ruleset, and a bypass actor skips rules, so a file-path rule could never
+constrain the App. Path scoping comes from `CODEOWNERS`, as above.
+
+With the approval requirement gone, the App's bypass may no longer be load
+bearing at all — worth removing so it is held to the same nine checks as
+everyone else, but that should be changed and observed on its own.
 
 Merged commits on `main` are unsigned despite `required_signatures`, because
 rebase-merge re-creates commits and discards the signature GitHub applies to the
