@@ -1,5 +1,6 @@
-# Last matching pattern wins; keep the catch-all first.
-* @jdwillmsen
+# Last matching pattern wins. Deliberately no catch-all: an unowned path needs
+# no code-owner approval, which is what lets the release bot merge its own
+# appVersion bumps. Ownership here is a gate, so only gate what needs gating.
 
 # CI/CD workflows and promotion tooling.
 /.github/ @jdwillmsen
