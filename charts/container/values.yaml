@@ -30,13 +30,38 @@ serviceAccount:
 podAnnotations: {}
 podLabels: {}
 
-podSecurityContext: {}
+# uid 101 is the image's own nginx user, given numerically because
+# runAsNonRoot cannot verify a name and would fail the container at admission.
+# The uid stays below the KSV-0020 floor deliberately: these pods share no UID
+# namespace with the host, and the image owns its document root at 101.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  fsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
 
-securityContext: {}
+# readOnlyRootFilesystem is absent on purpose: the entrypoint rewrites the built
+# bundles under the document root at start-up to inject runtime config, and a
+# read-only root makes the container exit 1 before nginx starts.
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
 
+# 8080, not 80: the shared scaffold derives the container port from this value,
+# and the serving user cannot bind a privileged port with all capabilities dropped.
 service:
   type: ClusterIP
-  port: 80
+  port: 8080
+  targetPort: 8080
 
 ingress:
   enabled: true
