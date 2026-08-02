@@ -10,3 +10,5 @@
 # "PRD Promotion Review Gate" repository ruleset (require_code_owner_review).
 /charts/*/values-prd.yaml @jdwillmsen
 /argocd/prd/ @jdwillmsen
+
+# (probe: verifying code-owner enforcement with required_approving_review_count=0)
