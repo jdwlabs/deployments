@@ -1,0 +1,27 @@
+# Charts allowed to sit behind values-prd.yaml without the drift check failing.
+#
+# A hold is for a gap that is a decision, not a lapse — most often a chart
+# whose prd pin and appVersion differ by a major version, which the promotion
+# doc requires cross-generation verification before closing. Without a way to
+# say that out loud, the check reports the same known gap every day until
+# someone stops reading it, and then reports a real one into the same silence.
+#
+# A hold is keyed on the chart and the exact version prd currently pins, so it
+# expires the moment prd moves: an exception cannot outlive the position it was
+# written to excuse. A hold matching no drifted chart fails the check rather
+# than lingering.
+#
+# Every entry needs a reason stating why the gap is intended and what closes
+# it. "Known issue" is not a reason; the next reader has to be able to decide
+# whether the hold still applies without asking whoever wrote it.
+#
+#   holds:
+#     - chart: usersrole
+#       prdTag: "0.10.14"
+#       reason: >-
+#         A major behind on purpose ...
+#
+# Nothing is held today. `usersrole` trails by a generation and is the one
+# outstanding promotion the doc names — that is a finding worth seeing, not one
+# worth silencing, so it is left to report.
+holds: []

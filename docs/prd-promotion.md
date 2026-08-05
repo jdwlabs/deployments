@@ -147,9 +147,10 @@ grep -H appVersion charts/*/Chart.yaml      # what non runs
 ```
 
 Five charts — `authui`, `container`, `rolesui`, `servicediscovery`, and
-`usersui` — track their current major line. They trail `appVersion` by at most
-a patch or two, which is ordinary promotion lag rather than a version gap, and
-`servicediscovery` is exactly level with it. For these, a numerically newer
+`usersui` — track their current major line. They trail `appVersion` by a patch
+or two at a time, which is ordinary promotion lag rather than a version gap —
+how far each one trails right now is what the drift check below answers, and
+naming a distance here would only go stale. For these, a numerically newer
 `appVersion` is a normal promotion candidate: the frontend generation split
 that once made the pinned image functionally ahead of the main line — the
 `/api/route-remotes` versus `/api/remotes` remotes contract — is closed.
@@ -166,6 +167,87 @@ does not fire at all while the E2E workflow is manual-only (see [How promotion
 works](#how-promotion-works)), so populating the allowlist would change
 nothing until that chain runs. Promotion is a `workflow_dispatch` in the
 meantime.
+
+## What the drift check covers
+
+Because promotion is a manual dispatch, a release can reach non and simply
+never reach prd. Nothing on the release path notices: the apps release job, the
+deliver jobs, and the self-merging chart bump all succeed without ever touching
+`values-prd.yaml`. That gap was found once by reading these files by hand
+during an incident, four days and three container versions after it opened.
+
+The `prd Drift` workflow closes that. It runs daily, and on
+`workflow_dispatch`, and reports every chart where `Chart.yaml` `appVersion`
+and the `values-prd.yaml` `image.tag` version disagree:
+
+```bash
+python3 tools/check-prd-drift.py            # the same check, locally
+python3 tools/check-prd-drift.py --full     # including charts that are level
+python3 tools/check-prd-drift.py --json     # machine-readable
+```
+
+What it grades, and how each outcome should be read:
+
+| Outcome | Meaning | Exit |
+|---|---|---|
+| level | prd runs the latest released version | pass |
+| settling | behind for less than the threshold (default 24h) — a promotion in flight | pass |
+| held | behind on purpose, with a reason in `tools/prd-drift-holds.yaml` | pass |
+| drifted | behind for longer than the threshold — a release that never landed | fail |
+| ahead | prd runs a version never released to non, so it was not promoted from here | fail |
+| unreadable | no `values-prd.yaml`, no `appVersion`, or a tag with no version in it | fail |
+
+Age is the finding, not the difference. Every chart is behind for a while after
+each release, so a check reporting mere inequality would be red permanently and
+read as noise; how long the gap has stood is what separates a promotion in
+flight from one that is never coming. The age is measured by walking
+`Chart.yaml` back through git to the last commit whose `appVersion` still
+equalled what prd pins, so the report gives the moment the gap opened rather
+than the moment it was noticed. A gap older than the history window is reported
+as a lower bound (`>=27d`), never as unknown.
+
+The digest half of the pin is stripped before comparing. `appVersion` has no
+digest to compare against, and the same version republished under a different
+digest is a pinning question, not a promotion one — [Digest
+pinning](#digest-pinning) and `tools/check-image-pins.py` own that.
+
+### Holding a gap open
+
+A cross-generation gap awaiting the [verification
+below](#verification-before-a-cross-generation-promotion) is a decision, not a
+lapse, and a check that cannot say so goes red every day until its reader stops
+looking. Declare it in `tools/prd-drift-holds.yaml` with the chart, the exact
+version prd pins, and a reason:
+
+```yaml
+holds:
+  - chart: usersrole
+    prdTag: "0.10.14"
+    reason: >-
+      Behind by a generation on purpose; the cross-generation verification
+      has not been recorded yet.
+```
+
+The key includes the pinned version, so the hold expires the moment prd moves
+and cannot outlive the position it excused. A hold matching no drifted chart
+fails the check rather than sitting there unnoticed.
+
+Nothing is held today. `usersrole` is deliberately left reporting: it is the
+one outstanding promotion this document already names, and silencing it would
+remove the only standing signal that it is still outstanding.
+
+### What it deliberately does not do
+
+It never promotes, and it is not a pull-request gate — the distance between
+`appVersion` and a prd pin is a property of `main`, and gating branches on it
+would block unrelated changes for a gap they cannot close.
+
+It also reads repository state rather than the conclusions of `Promote PRD`
+runs. Those runs are cancelled in ordinary operation: they share one serialised
+concurrency group that retains a single pending run, so dispatching several
+promotions at once cancels all but two. A `cancelled` conclusion reads as
+success to anything matching only on `failure`, which is the same way a missed
+promotion hid in the first place. Two files either agree or they do not.
 
 ## Promotion sequencing
 
@@ -186,8 +268,9 @@ and CI plus the code-owner review are the controls.
 ### Phase 1 — decoupled services first
 
 `servicediscovery` and `usersrole` have no module-federation coupling, so they
-promote independently of the rest. `servicediscovery` is already level;
-`usersrole` is the outstanding one. Promote one at a time via a bot PR, merge,
+promote independently of the rest. `usersrole` is the outstanding one, by a
+whole generation; `servicediscovery` moves in ordinary patch steps. Promote
+one at a time via a bot PR, merge,
 and soak in prd (suggested: 24h, watch error rates and probes) before the next
 app. Note prd resource overrides in `values-prd.yaml` stay as-is — promotion
 PRs only move `image.tag`.

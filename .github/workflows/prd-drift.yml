@@ -1,0 +1,82 @@
+name: prd Drift
+
+# Reports charts whose released appVersion never reached values-prd.yaml.
+#
+# Promotion to prd is a deliberate code-owner review and its automatic trigger
+# is dormant while E2E is manual-only, so a release reaching non and never
+# reaching prd is an expected intermediate state — and an indefinite one, with
+# nothing anywhere that ends it. Every signal on the release path stays green
+# while the gap widens, because none of them touch prd. This job is the missing
+# half: it does not promote anything, it says how far behind prd is and for how
+# long.
+#
+# Deliberately not a pull-request check. The distance between a chart's
+# appVersion and its prd pin is a property of main, not of a branch, so gating
+# pull requests on it would block every unrelated change for a gap that change
+# did not cause and cannot close — and a check whose subject is not the diff in
+# front of it is one people learn to merge past.
+#
+# Repository state is the subject on purpose. The obvious alternative — reading
+# the conclusions of Promote PRD runs — has to decide what `cancelled` means,
+# and promotion runs are cancelled in ordinary operation: they share one
+# serialised concurrency group that holds a single pending run, so dispatching
+# several at once cancels all but two. A `cancelled` conclusion reads as
+# success to anything matching only on `failure`, which is precisely how a
+# missed promotion would hide again.
+
+on:
+  schedule:
+    - cron: '23 6 * * *'
+  workflow_dispatch:
+    inputs:
+      max-age-hours:
+        description: 'Hours a chart may sit behind prd before it counts as a finding'
+        required: false
+        default: '24'
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          # Full history: how long a chart has been behind is read by walking
+          # Chart.yaml back to the last commit whose appVersion still matched
+          # the tag prd runs. A shallow clone reaches no such commit and turns
+          # every age into a lower bound.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: pip install PyYAML
+
+      - name: Report charts behind values-prd.yaml
+        env:
+          PRD_DRIFT_MAX_AGE_HOURS: ${{ github.event.inputs.max-age-hours || '24' }}
+        run: |
+          set -uo pipefail
+          # `|| status=$?` rather than a pipeline: the default shell runs with
+          # -e, so letting a non-zero check abort the step here would skip the
+          # report it just produced and leave the job red with nothing in it.
+          status=0
+          python3 tools/check-prd-drift.py > report.txt || status=$?
+          cat report.txt
+          {
+            echo '```'
+            cat report.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ne 0 ]; then
+            echo "::error::prd is behind the latest released version for one or more charts — see the report above."
+            echo "Nothing promotes on its own today. Dispatch Promote PRD per app, or record why the gap stands"
+            echo "in tools/prd-drift-holds.yaml so the next reader does not have to rediscover it."
+          fi
+          exit "$status"
