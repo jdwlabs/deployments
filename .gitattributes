@@ -1,0 +1,4 @@
+# Parsed line-by-line by a bash script in .github/workflows/promote-prd.yml;
+# a Windows checkout re-introducing CRLF here makes every entry fail chart-
+# name validation silently. Pin it to LF regardless of core.autocrlf.
+.github/prd-auto-promote text eol=lf
