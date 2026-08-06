@@ -49,9 +49,9 @@ carries scaffold shared by all apps.
 
 The library reads the same values every app chart already defines: `replicaCount`, `autoscaling`,
 `revisionHistoryLimit`, `image`, `imagePullSecrets`, `nameOverride`, `fullnameOverride`, `serviceAccount`,
-`podAnnotations`, `podLabels`, `podSecurityContext`, `securityContext`, `service`, `ingress`, `resources`,
-`livenessProbe`, `readinessProbe`, `startupProbe`, `volumes`, `volumeMounts`, `nodeSelector`, `tolerations`,
-`affinity`, `envs`, `envSecrets`, `configChecksumTemplates`.
+`podAnnotations`, `podLabels`, `deploymentAnnotations`, `podSecurityContext`, `securityContext`, `service`,
+`ingress`, `resources`, `livenessProbe`, `readinessProbe`, `startupProbe`, `volumes`, `volumeMounts`,
+`nodeSelector`, `tolerations`, `affinity`, `envs`, `envSecrets`, `configChecksumTemplates`.
 
 Notable semantics:
 
@@ -72,6 +72,9 @@ Notable semantics:
   Deployment binds to `service.port`), so both forms hit the same port.
 - `envSecrets` — list of `{secretKey, secretName}` (plus `key`/`property` consumed by per-app ExternalSecret
   templates); each entry becomes an env var sourced from a Kubernetes Secret.
+- `deploymentAnnotations` — annotations on the Deployment object's own `metadata`, distinct from `podAnnotations`
+  (which only reaches the pod template). Controllers that key off the Deployment itself, such as Stakater Reloader's
+  `secret.reloader.stakater.com/reload` opt-in, need this hook — `podAnnotations` has no path to that object.
 
 ## Making a shared template change
 
