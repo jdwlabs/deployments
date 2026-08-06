@@ -97,17 +97,23 @@ jobs:
           INPUT_APP: ${{ inputs.app }}
           INPUT_TAG: ${{ inputs.tag }}
         run: |
+          # Chart-name validation (valid_app) and the .github/prd-auto-promote
+          # parsing it gates live in tools/parse-prd-auto-promote.sh so the
+          # CRLF-handling and the "fail loud, not a warning" behaviour are
+          # covered by tools/tests/test-parse-prd-auto-promote.sh rather than
+          # only exercised through this dormant trigger.
+          # shellcheck source=/dev/null
+          source tools/parse-prd-auto-promote.sh
+
           chart_app_version() {
             sed -n 's/^appVersion:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}[[:space:]]*$/\1/p' "charts/$1/Chart.yaml" | head -1
           }
 
           # Both values flow into file paths, git refs, sed replacements and PR
           # text, so they are validated before any use: chart names as the
-          # lowercase-alphanumeric-and-hyphen directory convention, tags as the
-          # Docker image tag grammar (rules out sed metacharacters entirely).
-          valid_app() {
-            [[ "$1" =~ ^[a-z0-9-]+$ ]]
-          }
+          # lowercase-alphanumeric-and-hyphen directory convention (valid_app,
+          # sourced above), tags as the Docker image tag grammar (rules out sed
+          # metacharacters entirely).
           # An optional @sha256:<64 hex> suffix is accepted so a promotion can
           # pin content rather than a mutable tag. Docker Hub tags are mutable
           # and have been overwritten here before, leaving warm nodes serving a
@@ -155,6 +161,7 @@ jobs:
 
           : > candidates.txt
           unresolved=0
+          allowlist_invalid=0
           if [ "$EVENT" = "workflow_dispatch" ]; then
             app="$INPUT_APP"
             if ! valid_app "$app"; then
@@ -180,15 +187,11 @@ jobs:
             fi
             echo "$app $ref" >> candidates.txt
           else
-            allowlist=$(grep -v '^[[:space:]]*#' .github/prd-auto-promote 2>/dev/null | sed '/^[[:space:]]*$/d' || true)
-            if [ -z "$allowlist" ]; then
-              echo "No charts are enabled for automatic prd promotion (.github/prd-auto-promote is empty). Nothing to do."
+            allowlist=$(parse_allowlist .github/prd-auto-promote) || allowlist_invalid=1
+            if [ -z "$allowlist" ] && [ "$allowlist_invalid" -eq 0 ]; then
+              echo "No charts are enabled for automatic prd promotion (.github/prd-auto-promote has no entries). Nothing to do."
             fi
             for app in $allowlist; do
-              if ! valid_app "$app"; then
-                echo "::warning::allowlisted entry '${app}' is not a valid chart name; skipping."
-                continue
-              fi
               if [ ! -f "charts/${app}/values-prd.yaml" ]; then
                 echo "::warning::allowlisted chart '${app}' has no values-prd.yaml; skipping."
                 continue
@@ -240,6 +243,11 @@ jobs:
 
           if [ "$unresolved" -ne 0 ]; then
             echo "::error::${unresolved} allowlisted chart(s) could not be resolved to an image index digest; failing rather than promoting a mutable tag."
+            exit 1
+          fi
+
+          if [ "$allowlist_invalid" -ne 0 ]; then
+            echo "::error::.github/prd-auto-promote contains an entry that failed chart-name validation (see ::error:: above); failing rather than silently skipping it."
             exit 1
           fi
 

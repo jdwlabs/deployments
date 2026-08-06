@@ -92,6 +92,10 @@ jobs:
         env:
           RESOLVE_DIGEST_TESTS_OFFLINE: "1"
         run: bash tools/tests/test-resolve-image-digest.sh
+      - name: Shellcheck the allowlist parser
+        run: shellcheck -x tools/parse-prd-auto-promote.sh tools/tests/test-parse-prd-auto-promote.sh
+      - name: Allowlist parser tests
+        run: bash tools/tests/test-parse-prd-auto-promote.sh
 
   validate-config:
     runs-on: ubuntu-latest
