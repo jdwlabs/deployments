@@ -9,6 +9,10 @@ leaves the Deployment spec byte-identical when only its contents change, so
 without this the pods keep serving the config they started with. Only the data
 key is hashed: hashing whole documents would also fold in chart-version labels
 and roll pods on releases that changed no configuration.
+
+deploymentAnnotations lands on the Deployment object itself, not the pod
+template — podAnnotations has no path there. Reloader's opt-in annotation
+must be on the Deployment, so it needs this separate hook.
 */}}
 {{- define "common.deployment" -}}
 {{- $configChecksum := "" }}
@@ -25,6 +29,10 @@ metadata:
   name: {{ include "common.fullname" . }}
   labels:
     {{- include "common.labels" . | nindent 4 }}
+  {{- with .Values.deploymentAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}

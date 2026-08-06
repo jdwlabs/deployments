@@ -48,3 +48,9 @@ envSecrets:
     key: usersrole
     property: jwt_key_non
     secretName: usersrole-non
+
+# Opt-in for Reloader (installed via the platform repo's GitOps path, not
+# yet live): comma-separated Secret names, matching the two envSecrets
+# sources above. Inert until Reloader is installed.
+deploymentAnnotations:
+  secret.reloader.stakater.com/reload: "usersrole-pg-non,usersrole-non"
