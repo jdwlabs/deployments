@@ -31,6 +31,12 @@ envs:
   # Pinned next to the port it must agree with: 4317 is the gRPC receiver and
   # 4318 the HTTP one, so changing one without the other silently stops export.
   OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+  # Tenant id for Tempo's X-Scope-OrgID multitenancy, matching this workload's
+  # namespace tenant (jdwlabs-non -> platform.jdwlabs.io/tenant: jdwlabs). A
+  # non-multitenant Tempo accepts and ignores this header, so it is safe to
+  # land before Tempo's own multitenancyEnabled flip; after the flip, this
+  # is the only thing standing between this service and a rejected push.
+  OTEL_EXPORTER_OTLP_HEADERS: X-Scope-OrgID=jdwlabs
   # The service builds its resource from the environment plus the telemetry SDK
   # only, and does not merge the SDK default that would otherwise supply a
   # service name. Without this every span arrives with no service.name, which
