@@ -8,6 +8,15 @@ on:
 permissions:
   contents: write
 
+# Shares its group with Release Chart: both push to gh-pages, and two Release
+# Chart runs completing close together (batch-releasing more than one chart)
+# would otherwise trigger two of these in parallel, each checking out
+# gh-pages, editing index.html, and pushing - a non-fast-forward race on the
+# same branch. Same pattern promote-prd.yml already uses for a single actor.
+concurrency:
+  group: gh-pages-write
+  cancel-in-progress: false
+
 jobs:
   update-index:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}

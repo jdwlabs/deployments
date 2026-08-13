@@ -10,6 +10,18 @@ permissions:
   pages: write
   id-token: write
 
+# Two tags pushed close together (releasing more than one chart in a batch)
+# trigger two concurrent runs, and the reusable release-helm.yml workflow
+# writes the shared Helm repo index by fetching gh-pages, editing it, and
+# pushing HEAD:gh-pages without force - a second run's non-fast-forward push
+# silently fails to land its index update if it races the first. Same
+# shared-ref hazard promote-prd.yml already solved for a single actor; this
+# group is shared with Update Chart Index Page (below) since both write to
+# gh-pages and neither may race the other, not just itself.
+concurrency:
+  group: gh-pages-write
+  cancel-in-progress: false
+
 jobs:
   release:
     uses: jdwlabs/.github/.github/workflows/release-helm.yml@main

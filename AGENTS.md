@@ -86,6 +86,38 @@ Traceability lives in the commit message and PR description; comments
 should explain *why* the config is what it is so they stay meaningful
 after the ticket closes.
 
+## Concurrency: one worktree, one branch, one agent invocation
+
+Multiple AI agents may operate against this repo at the same time. Never
+work on `main`/`master`, and create a worktree before touching code. For
+humans this is standing practice; for agents it is a **hard invariant,
+not a convention they can relax**:
+
+- Every agent invocation gets its own worktree and its own branch. Never
+  share a worktree across two concurrent agent sessions, and never reuse
+  one worktree for a second, unrelated task after the first is done —
+  create a fresh one instead.
+- Before rebasing or pushing, re-fetch `origin/main` rather than trusting
+  the worktree's cached view of it. A worktree that looks up to date can
+  be stale by the time a concurrent session has pushed.
+- Never assume you are the only agent with a checkout of this repo. Two
+  sessions sharing state is how an unpushed local commit has landed on
+  `main` minutes after a second, unrelated session already pushed — the
+  failure is silent until the histories are compared.
+- No more than 3 agentic actors run concurrently against this repo — see
+  `docs/agentic-concurrency-limits.md` for the cap and its rationale.
+
+This generalizes the same failure mode `.github/workflows/promote-prd.yml`
+already had to solve for a single automated actor: a `concurrency:` group
+serializes runs so two can never race on the same target ref
+(`release.yml` and `update-pages.yml` carry the same pattern, scoped to the
+shared `gh-pages` ref both write to). A shared mutable resource (a
+worktree, or a branch, or a ref two workflows both push) needs exclusive
+ownership per in-flight task, or concurrent writers eventually race. See
+`platform/docs/adr/0015-agentic-contribution-identity-and-review-gates.md`
+("Concurrency and isolation") for the fuller rationale — that ADR is still
+`proposed`; this invariant is the part of it already in force.
+
 ## Tooling Traps
 
 RTK's filtered output is **not** the tool's output — it summarises, truncates, and
