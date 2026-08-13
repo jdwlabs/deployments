@@ -20,10 +20,16 @@ in `platform/docs/adr/` as a follow-on to 0015, not as a new
 
 ## The cap
 
-**Hard cap: 3 concurrent agentic actors per repo**, enforced at the
-orchestration layer that dispatches agent sessions (a launcher/queue refusing
-a 4th concurrent dispatch against this repo), not left to agent
-self-discipline.
+**Hard cap: 3 concurrent agentic actors per repo.**
+
+**Status: documented policy, not an active control.** Nothing today
+technically enforces this number — no launcher, queue, or CI gate refuses a
+4th concurrent dispatch against this repo. This is the number an
+orchestration layer should enforce once one exists (a launcher/queue
+refusing a 4th concurrent agent dispatch against this repo), not a
+self-discipline guideline agents are expected to police themselves. Until
+that enforcement lands, the cap is upheld only by whoever is dispatching
+agent sessions choosing to respect it.
 
 "Agentic actor" here means an autonomous coding-agent session (e.g. a Claude
 Code invocation) making judgment-driven changes in its own worktree, per the
@@ -92,3 +98,17 @@ This doc caps *how many* actors may run concurrently; it says nothing about
   promote-prd`) and, as of this change, `release.yml` / `update-pages.yml`
   (`group: gh-pages-write`) serialize writes to the refs those workflows
   share, so two concurrent runs can race in time but not in effect.
+
+  **Known limitation, not fixed here:** `cancel-in-progress: false` holds
+  exactly one pending run per group, not an unbounded queue. A 3rd
+  concurrent entrant cancels the previously-pending run rather than queuing
+  behind it, and a `cancelled` conclusion reads as success to anything
+  matching only on `failure` — `prd-drift.yml` already documents this exact
+  class of problem for `promote-prd.yml`'s group. For `gh-pages-write`, a
+  batch of 3+ chart releases (or a release and an index update both pending
+  at once) can silently drop a middle entry with no retry. Closing this
+  fully needs either deeper per-group queuing than GitHub Actions offers, or
+  `release-helm.yml` (`jdwlabs/.github`, upstream, out of scope for this
+  repo) retrying/rebasing its push instead of a single non-retrying attempt
+  — worth a follow-up ticket against `jdwlabs/.github` if this race is ever
+  observed in practice rather than only reasoned about.

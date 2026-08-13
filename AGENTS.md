@@ -104,8 +104,11 @@ not a convention they can relax**:
   sessions sharing state is how an unpushed local commit has landed on
   `main` minutes after a second, unrelated session already pushed — the
   failure is silent until the histories are compared.
-- No more than 3 agentic actors run concurrently against this repo — see
-  `docs/agentic-concurrency-limits.md` for the cap and its rationale.
+- The cap on concurrent agentic actors against this repo is 3. This is
+  documented policy today, not an active control — no launcher or queue
+  enforces it yet, so it will be enforced at the orchestration layer once
+  one exists. See `docs/agentic-concurrency-limits.md` for the cap and its
+  rationale.
 
 This generalizes the same failure mode `.github/workflows/promote-prd.yml`
 already had to solve for a single automated actor: a `concurrency:` group
