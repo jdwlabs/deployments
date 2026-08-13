@@ -11,8 +11,18 @@ permissions:
 # Shares its group with Release Chart: both push to gh-pages, and two Release
 # Chart runs completing close together (batch-releasing more than one chart)
 # would otherwise trigger two of these in parallel, each checking out
-# gh-pages, editing index.html, and pushing - a non-fast-forward race on the
-# same branch. Same pattern promote-prd.yml already uses for a single actor.
+# gh-pages, editing index.html, and pushing. `git push` here has no `|| true`
+# and runs under Actions' default `bash -eo pipefail`, so a racing
+# non-fast-forward rejection fails this job loudly (red run), not silently.
+#
+# KNOWN LIMITATION - see the fuller note in release.yml: cancel-in-progress:
+# false holds one pending run per group, not an unbounded queue. A 3rd
+# concurrent entrant across the two workflows sharing this group cancels the
+# previously-pending run instead of queuing behind it, and a `cancelled`
+# conclusion reads as success to anything matching only on `failure` - the
+# same class of problem prd-drift.yml documents for promote-prd.yml. This
+# group narrows the race window, it does not close it for 3+ concurrent
+# writers.
 concurrency:
   group: gh-pages-write
   cancel-in-progress: false
