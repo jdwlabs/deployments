@@ -9,6 +9,15 @@ on:
       - main
   workflow_dispatch:
 
+# Every job here only reads the tree; nothing writes back to the repo.
+permissions:
+  contents: read
+
+# Cancel superseded PR runs; a main-push always runs the gates to completion.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
