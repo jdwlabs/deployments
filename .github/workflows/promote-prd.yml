@@ -86,6 +86,14 @@ jobs:
         with:
           app-id: ${{ secrets.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          # The App is installed org-wide, so omitting owner/repositories mints
+          # a token valid across every repo in the org. Scope it to this repo
+          # and to the two permissions the steps below actually use: the git
+          # refs/contents API calls, and gh pr list/create.
+          owner: ${{ github.repository_owner }}
+          repositories: deployments
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Checkout
         uses: actions/checkout@v7.0.1

@@ -4,6 +4,17 @@ on:
   pull_request:
   push:
     branches: [main]
+    # The main-branch run exists to land SARIF on the default branch, which
+    # docs-only commits cannot change. The repo rebase-merges, so every PR's
+    # commits re-scan a tree the PR run already scanned.
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+
+# Cancel superseded PR runs; a main-push always uploads its SARIF.
+concurrency:
+  group: security-scan-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
