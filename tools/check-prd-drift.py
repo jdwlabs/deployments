@@ -75,6 +75,7 @@ import os
 import re
 import subprocess
 import sys
+import traceback
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -82,6 +83,13 @@ from pathlib import Path
 import yaml
 
 HOLDS_RELPATH = "tools/prd-drift-holds.yaml"
+
+# Exit codes. 0 and 1 are the verdicts — prd is level, or prd is behind. 2 says
+# no verdict was reached at all, so a caller never has to read "the check
+# failed" as "the check found something".
+EXIT_LEVEL = 0
+EXIT_DRIFTED = 1
+EXIT_NO_VERDICT = 2
 
 # Drift younger than this is a promotion in flight rather than a finding. A day
 # is long enough that an ordinary same-day promotion never reports, and short
@@ -476,8 +484,18 @@ def main(argv: list[str] | None = None) -> int:
     repo_root = Path(__file__).resolve().parent.parent
     report = check(repo_root)
     print(as_json(report) if args.json else render(report, full=args.full))
-    return 0 if report.ok else 1
+    return EXIT_LEVEL if report.ok else EXIT_DRIFTED
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # Three exit codes, not two. A caller has to be able to tell "prd is behind"
+    # from "this check could not say", because they call for opposite responses:
+    # the first is a promotion someone has to dispatch, the second means drift
+    # detection is blind and nobody would otherwise learn that. Collapsing an
+    # unhandled exception into the same 1 that a finding uses is what makes a
+    # broken checker look exactly like a working one with something to report.
+    try:
+        sys.exit(main())
+    except Exception:
+        traceback.print_exc()
+        sys.exit(EXIT_NO_VERDICT)
