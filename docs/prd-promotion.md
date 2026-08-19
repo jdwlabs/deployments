@@ -211,6 +211,40 @@ digest to compare against, and the same version republished under a different
 digest is a pinning question, not a promotion one — [Digest
 pinning](#digest-pinning) and `tools/check-image-pins.py` own that.
 
+### Where the result goes
+
+A red scheduled run is a record, not a notification. Nothing watches the
+Actions tab, no review blocks on this workflow, and nobody is told when it
+turns — which is how it ran red for a fortnight over a real gap without
+reaching a person. Every run therefore also posts one alert to Alertmanager
+through `tools/notify-alert.py`, and the severity picks the audience:
+
+| Run outcome | Exit | Alert | Reaches |
+|---|---|---|---|
+| level, settling, or held | 0 | none sent | — |
+| drifted, ahead, or unreadable | 1 | `severity: warning`, no tenant | the AI-SRE relay only |
+| the check reached no verdict | 2 | `severity: critical` | the relay **and** Discord |
+
+A finding is triage, not a page. It stands for as long as it takes someone to
+dispatch the promotions, so sending it to Discord daily would either nag until
+it is filtered or — worse — post a `resolved` line minutes later when
+Alertmanager expires the alert, which reads as the gap having closed while
+nothing has moved. The relay takes warnings without a tenant label and nothing
+else does, which is exactly the audience a standing backlog item wants.
+
+No verdict is the opposite case. `tools/check-prd-drift.py` exits 2 when it
+cannot grade the charts at all, separately from the 1 it exits on a finding,
+because a check that cannot run looks identical to a working one with nothing
+to say — and while it is down, nothing is watching prd. That is rare, urgent,
+and worth a page, so it goes critical and reaches Discord too.
+
+Alerts carry no `endsAt`; Alertmanager expires them on its own
+`resolve_timeout`, so a run that stops reporting a finding stops alerting. Two
+conditions this cannot cover, both of which need an `absent()` rule beside the
+cluster's other Prometheus rules rather than a step inside a job that is not
+running: a schedule that stops firing at all, and a run killed by the job
+timeout, which takes the notify step with it.
+
 ### Holding a gap open
 
 A cross-generation gap awaiting the [verification

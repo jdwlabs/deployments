@@ -11,7 +11,7 @@ jdwlabs `deployments` defines what runs on the jdwlabs Kubernetes cluster. It co
 - `argocd/<env>/config.yaml` — app definitions for that environment (`non`, `prd`), expanded into ArgoCD Applications by the platform ApplicationSet
 - `charts/<name>/` — custom Helm charts for jdwlabs services (`values.yaml` base + `values-<env>.yaml` overrides)
 - `charts/common/` — shared library chart consumed by every app chart
-- `tools/` — repo tooling: `generate-index.py` renders the Helm chart index page pushed to GitHub Pages by CI; `check-image-pins.py` fails CI on any mutable image reference (unit tests alongside it in `test_check_image_pins.py`)
+- `tools/` — repo tooling: `generate-index.py` renders the Helm chart index page pushed to GitHub Pages by CI; `check-image-pins.py` fails CI on any mutable image reference (unit tests alongside it in `test_check_image_pins.py`); `check-prd-drift.py` grades how far each chart's prd pin trails its released `appVersion` for the `prd Drift` schedule; `notify-alert.py` posts one Alertmanager alert so a scheduled workflow's result reaches the AI-SRE relay (warning) or Discord as well (critical) instead of stopping at the Actions tab
 
 ## Key Concepts
 
