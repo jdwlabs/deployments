@@ -39,6 +39,14 @@ service:
   port: 8080
   targetPort: 8080
 
+# Spring Boot Actuator's Prometheus registry is on the same http port as the
+# app itself (management endpoints aren't split to a separate port) — same
+# assumption the readiness/liveness probes already make against /actuator/health.
+metrics:
+  enabled: true
+  path: /actuator/prometheus
+  interval: 30s
+
 ingress:
   enabled: true
   gateway:
