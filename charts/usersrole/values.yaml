@@ -112,7 +112,12 @@ externalSecrets:
 envs:
   UR_PG_DATASOURCE_URL: jdbc:postgresql://platform-postgresql-cluster-non-rw.database:5432/jdwlabs_non
   UR_JWT_EXPIRATION_TIME_MS: "7200000"
-#  JAVA_OPTS: "-XX:+UseContainerSupport -Xms512m -Xmx1g"
+  # Without an explicit MaxRAMPercentage, JVM ergonomics default it to 25% of
+  # the container's memory *limit* (not request), so the effective heap
+  # ceiling silently floats whenever the limit changes. Pinned so the
+  # container-limit-to-heap relationship is a deliberate, documented value
+  # instead of an implicit side effect of a resize.
+  JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=50.0"
 
 envSecrets:
   - secretKey: UR_PG_USERNAME
