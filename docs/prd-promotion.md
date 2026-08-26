@@ -11,7 +11,7 @@ Three version fields exist per chart and they mean different things:
 
 | Field | Meaning | Who changes it |
 |---|---|---|
-| `Chart.yaml` `version` | Chart **packaging** version. Bumped only when templates, values structure, or chart dependencies change. Drives the Helm repo release (`Release Chart` workflow on `*-v[0-9]*` tags). | Humans, in the PR that changes the chart itself |
+| `Chart.yaml` `version` | Chart **packaging** version. Bumped only when templates, values structure, or chart dependencies change. Drives the Helm repo release (`Release Chart` workflow on `*-[0-9]*.[0-9]*.[0-9]*` tags, e.g. `<chart>-1.2.3` — no `v` prefix, matching `helm/chart-releaser`'s convention). | Humans, in the PR that changes the chart itself |
 | `Chart.yaml` `appVersion` | Latest app release delivered to **non**. `image.tag` is empty in `values.yaml`/`values-non.yaml`, so non runs `appVersion`. | The apps-repo release pipeline (direct bot commit on merge to apps `main`) |
 | `values-prd.yaml` `image.tag` | The image **prd** actually runs. | The `Promote PRD` workflow, via reviewed PR only |
 
