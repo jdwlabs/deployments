@@ -328,6 +328,11 @@ jobs:
               continue
             fi
 
+            # The "CI is green" line below names required-check job contexts
+            # ("lint", "template", "validate-config") as literal text — keep
+            # it in lockstep with any rename/merge/removal of those jobs and
+            # with .github/rulesets/baseline.json (see that ruleset's
+            # apply.sh for the required-check rename procedure).
             cat > /tmp/pr-body.md <<EOF
           Automated prd promotion proposal opened by the Promote PRD workflow.
 

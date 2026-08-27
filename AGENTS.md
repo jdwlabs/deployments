@@ -55,6 +55,16 @@ kubectl get pods -n <namespace>                  # Pod status for a namespace
 kubectl logs <pod> -n <namespace>                # Pod logs
 ```
 
+### Branch protection / required checks
+
+Branch rulesets (required status checks, review rules) are managed as code
+in [`.github/rulesets/`](.github/rulesets/) and applied to GitHub manually
+via `apply.sh` after merge — see that script's header comment before
+renaming, merging, or removing any required CI job context; doing it in the
+wrong order can make a PR permanently unmergeable or block every open PR.
+`.github/workflows/promote-prd.yml` also hardcodes required-check job names
+into a generated PR body and must be updated in the same lockstep.
+
 ## Common Tasks
 
 ### Add a new application deployment
