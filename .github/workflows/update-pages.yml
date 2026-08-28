@@ -11,9 +11,10 @@ permissions:
 # Shares its group with Release Chart: both push to gh-pages, and two Release
 # Chart runs completing close together (batch-releasing more than one chart)
 # would otherwise trigger two of these in parallel, each checking out
-# gh-pages, editing index.html, and pushing. `git push` here has no `|| true`
-# and runs under Actions' default `bash -eo pipefail`, so a racing
-# non-fast-forward rejection fails this job loudly (red run), not silently.
+# gh-pages, editing index.html, and pushing. The reusable job's `git push`
+# has no `|| true` and runs under Actions' default `bash -eo pipefail`, so a
+# racing non-fast-forward rejection fails this job loudly (red run), not
+# silently.
 #
 # KNOWN LIMITATION - see the fuller note in release.yml: cancel-in-progress:
 # false holds one pending run per group, not an unbounded queue. A 3rd
@@ -30,29 +31,13 @@ concurrency:
 jobs:
   update-index:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7.0.1
-        with:
-          fetch-depth: 0
-
-      - uses: actions/checkout@v7.0.1
-        with:
-          ref: gh-pages
-          path: gh-pages
-
-      - name: Install dependencies
-        run: pip install PyYAML
-
-      - name: Generate index.html
-        run: python3 tools/generate-index.py
-
-      - name: Push index.html to gh-pages
-        run: |
-          cp index.html gh-pages/index.html
-          cd gh-pages
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add index.html
-          git diff --cached --quiet || git commit -m "docs: regenerate chart index page [skip ci]"
-          git push
+    uses: jdwlabs/.github/.github/workflows/update-pages.yml@main
+    permissions:
+      contents: write
+    # With this repo's Release App credentials present, the reusable job
+    # pushes under a minted App token scoped to this repo and commits as
+    # jdwlabs-release-bot[bot] - the same identity the release pipeline
+    # uses - instead of github-actions[bot] via GITHUB_TOKEN.
+    secrets:
+      RELEASE_APP_ID: ${{ secrets.RELEASE_APP_ID }}
+      RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
