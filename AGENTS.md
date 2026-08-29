@@ -169,7 +169,7 @@ Ticket evidence more than ~a week old (or gathered in a different investigation)
 - `kubectl apply` and `kubectl delete` are out of scope — workload management is ArgoCD's job
 - Read-only `kubectl get`, `kubectl describe`, `kubectl logs` are safe
 - `targetRevision` must always be `HEAD` or a semver tag — never a branch name other than the default
-- Every image reference in `charts/` must be digest-pinned as `<tag>@sha256:<index digest>` — the **index** (manifest-list) digest, never a per-arch child manifest digest — or carry an entry in `tools/image-pin-allowlist.yaml` keyed on path + repository + tag with an inline reason. Run `python3 tools/check-image-pins.py` before pushing; a digest-only tag (`tag: "@sha256:..."`) is rejected because the common chart concatenates `repository:tag` and would render something unpullable that `helm template` still accepts
+- Every image reference in `charts/` must be digest-pinned as `<tag>@sha256:<index digest>` — the **index** (manifest-list) digest, never a per-arch child manifest digest — or carry an entry in `tools/image-pin-allowlist.yaml` keyed on path + full reference (`ref`, the bare repository when no tag is set) with an inline reason. Run `python3 tools/check-image-pins.py` before pushing — the script is the org-canonical copy from `jdwlabs/.github` and CI fails if it drifts from it (fix rules there, then re-vendor; this repo's layout is declared in `tools/image-pin-check.yaml`); a digest-only tag (`tag: "@sha256:..."`) is rejected because the common chart concatenates `repository:tag` and would render something unpullable that `helm template` still accepts
 - No secrets in this repo — reference Vault paths via ExternalSecret manifests only
 
 ## References

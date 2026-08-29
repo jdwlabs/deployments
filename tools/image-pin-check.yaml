@@ -1,0 +1,14 @@
+# Per-repo configuration for tools/check-image-pins.py. The script itself is
+# the org-canonical copy (jdwlabs/.github) and is compared byte-for-byte
+# against it in CI; everything specific to this repo's layout lives here.
+allowlist: tools/image-pin-allowlist.yaml
+sources:
+  # Every app chart's values-<env>.yaml overlay, Helm-merged onto its
+  # values.yaml. The overlay is what decides the image a node pulls.
+  - kind: helm-overlays
+    charts: charts
+  # Literal `image:` lines in chart templates, the library chart included.
+  # Templated values resolve from the overlays above.
+  - kind: tree
+    globs:
+      - charts/*/templates/**/*

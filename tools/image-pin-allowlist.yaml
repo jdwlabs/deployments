@@ -5,24 +5,23 @@
 # treated as stale and fails the check — remove it once the file is fixed or
 # no longer exists.
 #
-# An entry is keyed on all three of `path`, `repository` and `tag`, not on
-# `path` alone. A path-only key would keep excusing whatever that file's image
-# block later turned into: swapping the repository, or replacing an empty tag
-# with `latest`, would inherit an exemption written about a different
-# reference, and the reason text would quietly stop being true. Keying on the
-# reference itself makes an exception expire the moment what it excused
-# changes, and the stale-entry check then forces the leftover row out.
-#
-# `path` is repo-relative. `tag` is the effective tag after values.yaml and the
-# overlay are merged — quote it, and use "" for "no tag set, falls back to
-# Chart.appVersion".
+# `path` is repo-relative; `ref` is the FULL reference the checker composes
+# for that location after values.yaml and the overlay are merged, tag included
+# (e.g. `jdwlabs/authui:2.0.22`) — together they are the unique key. A bare
+# repository means "no tag set, falls back to Chart.appVersion". The tag is
+# part of the key on purpose: a path-only key would keep excusing whatever
+# that file's image block later turned into — swapping the repository, or
+# replacing an empty tag with `latest`, would inherit an exemption written
+# about a different reference, and the reason text would quietly stop being
+# true. Keying on the reference itself makes an exception expire the moment
+# what it excused changes, and the stale-entry check then forces the leftover
+# row out.
 #
 # Malformed references (digest-only tags, unquoted numeric tags) are NOT
 # allowlistable — no reason makes an unresolvable reference correct.
 exceptions:
   - path: charts/authui/values-non.yaml
-    repository: jdwlabs/authui
-    tag: ""
+    ref: jdwlabs/authui
     reason: >-
       non intentionally tracks Chart.appVersion under imagePullPolicy: Always
       rather than a digest pin, so a new build reaches the environment without
@@ -31,8 +30,7 @@ exceptions:
       in this file for the incident that motivated the Always pull policy.
 
   - path: charts/container/values-non.yaml
-    repository: jdwlabs/container
-    tag: ""
+    ref: jdwlabs/container
     reason: >-
       non intentionally tracks Chart.appVersion under imagePullPolicy: Always
       rather than a digest pin, so a new build reaches the environment without
@@ -41,8 +39,7 @@ exceptions:
       in this file for the incident that motivated the Always pull policy.
 
   - path: charts/rolesui/values-non.yaml
-    repository: jdwlabs/rolesui
-    tag: ""
+    ref: jdwlabs/rolesui
     reason: >-
       non intentionally tracks Chart.appVersion under imagePullPolicy: Always
       rather than a digest pin, so a new build reaches the environment without
@@ -51,8 +48,7 @@ exceptions:
       for a non-production environment, not an oversight.
 
   - path: charts/servicediscovery/values-non.yaml
-    repository: jdwlabs/servicediscovery
-    tag: ""
+    ref: jdwlabs/servicediscovery
     reason: >-
       non intentionally tracks Chart.appVersion under imagePullPolicy: Always
       rather than a digest pin, so a new build reaches the environment without
@@ -62,8 +58,7 @@ exceptions:
       accident — prd itself is digest-pinned.
 
   - path: charts/usersrole/values-non.yaml
-    repository: jdwlabs/usersrole
-    tag: ""
+    ref: jdwlabs/usersrole
     reason: >-
       non intentionally tracks Chart.appVersion under imagePullPolicy: Always
       rather than a digest pin, so a new build reaches the environment without
@@ -71,8 +66,7 @@ exceptions:
       non-production environment, not an oversight.
 
   - path: charts/usersui/values-non.yaml
-    repository: jdwlabs/usersui
-    tag: ""
+    ref: jdwlabs/usersui
     reason: >-
       non intentionally tracks Chart.appVersion under imagePullPolicy: Always
       rather than a digest pin, so a new build reaches the environment without
@@ -80,8 +74,7 @@ exceptions:
       non-production environment, not an oversight.
 
   - path: charts/common/templates/_test-connection.yaml
-    repository: busybox
-    tag: ""
+    ref: busybox
     reason: >-
       Helm `test` hook, not a workload. Helm only materialises it on an
       explicit `helm test`, and ArgoCD — which is the only thing that applies
