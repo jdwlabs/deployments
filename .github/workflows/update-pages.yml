@@ -31,7 +31,7 @@ concurrency:
 jobs:
   update-index:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    uses: jdwlabs/.github/.github/workflows/update-pages.yml@main
+    uses: jdwlabs/.github/.github/workflows/update-pages.yml@b827924589b7e129a81762131b9d451121718bdc  # main as of 2026-08-26 (jdwlabs/.github has no tagged releases)
     permissions:
       contents: write
     # With this repo's Release App credentials present, the reusable job
