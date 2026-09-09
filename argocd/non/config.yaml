@@ -8,6 +8,22 @@ apps:
       - values.yaml
       - values-non.yaml
 
+  - name: identity-service-non
+    namespace: jdwlabs-non
+    chartPath: charts/identity-service
+    syncWave: "1"
+    valueFiles:
+      - values.yaml
+      - values-non.yaml
+
+  - name: profile-service-non
+    namespace: jdwlabs-non
+    chartPath: charts/profile-service
+    syncWave: "1"
+    valueFiles:
+      - values.yaml
+      - values-non.yaml
+
   - name: servicediscovery-non
     namespace: jdwlabs-non
     chartPath: charts/servicediscovery
