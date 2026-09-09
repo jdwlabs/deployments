@@ -8,6 +8,22 @@ apps:
       - values.yaml
       - values-prd.yaml
 
+  - name: identity-service-prd
+    namespace: jdwlabs-prd
+    chartPath: charts/identity-service
+    syncWave: "1"
+    valueFiles:
+      - values.yaml
+      - values-prd.yaml
+
+  - name: profile-service-prd
+    namespace: jdwlabs-prd
+    chartPath: charts/profile-service
+    syncWave: "1"
+    valueFiles:
+      - values.yaml
+      - values-prd.yaml
+
   - name: servicediscovery-prd
     namespace: jdwlabs-prd
     chartPath: charts/servicediscovery
