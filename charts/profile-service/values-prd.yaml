@@ -1,0 +1,50 @@
+image:
+  # Pinned by index digest, the convention every prd overlay here follows: a
+  # republished tag once left nodes serving a build older than the tag claimed,
+  # under a pull policy that never re-checked. The digest makes the pull
+  # deterministic whatever the tag later points at.
+  tag: "0.0.3@sha256:00215c3a7d6f08c3bce7eb011639a7d7d6224f2edfae91e4756bf9e83d6b191c"
+
+envs:
+  # The same cluster, database and JDBC URL usersrole reads; the service parses
+  # this form and rewrites it into the libpq URL its driver needs, so one value
+  # feeds the JVM and both Go services through the cutover.
+  UR_PG_DATASOURCE_URL: jdbc:postgresql://platform-postgresql-cluster-prd-rw.database:5432/jdwlabs_prd
+  # The origin every token is minted from, which this service checks on the way
+  # in. It names the host the API is reached through rather than any one
+  # service, and must stay equal to identity-service's ID_JWT_ISSUER_ORIGIN —
+  # they disagree and every authenticated request here is refused.
+  PS_JWT_ISSUER_ORIGIN: https://usersrole.prd.jdwlabs.com
+
+externalSecrets:
+  - refreshInterval: 1m
+    secretStoreName: k8s-secret-store
+    secretName: profile-service-pg-prd
+  - refreshInterval: 1m
+    secretStoreName: vault
+    secretName: profile-service-prd
+
+# The same underlying keys usersrole reads, not copies of them: the three
+# services verify each other's tokens, so they have to share one signing secret
+# and one database role. A second vault property would refuse every token
+# identity-service mints.
+envSecrets:
+  - secretKey: UR_PG_USERNAME
+    key: platform-postgresql-cluster-prd-app
+    property: username
+    secretName: profile-service-pg-prd
+  - secretKey: UR_PG_PASSWORD
+    key: platform-postgresql-cluster-prd-app
+    property: password
+    secretName: profile-service-pg-prd
+  - secretKey: UR_JWT_SECRET_KEY
+    key: usersrole
+    property: jwt_key_prd
+    secretName: profile-service-prd
+
+# Reloader is installed on this cluster, so this is live rather than an opt-in
+# waiting on it: a rotated signing key or database password restarts the pods
+# instead of leaving them authenticating with a credential the store has
+# already replaced.
+deploymentAnnotations:
+  secret.reloader.stakater.com/reload: "profile-service-pg-prd,profile-service-prd"
