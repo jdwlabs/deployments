@@ -1,3 +1,18 @@
+{{/*
+Shared HTTPRoute scaffold.
+
+ingress.rules is optional. Unset, the route emits the single catch-all rule
+every chart consuming this renders today. Set, each entry may carry Gateway API
+path matches, which is what lets a chart claim only the paths it serves on a
+hostname another chart also answers on: the Gateway resolves overlapping routes
+by match specificity, so a rule carrying matches wins over a catch-all without
+either chart having to know the other exists.
+
+backendRefs is not per-rule on purpose — every rule points at this chart's own
+Service. A rule sending traffic to somebody else's workload belongs in that
+workload's chart, where the service name is a local fact rather than a string
+two charts have to keep in agreement.
+*/}}
 {{- define "common.httproute" -}}
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "common.fullname" . -}}
@@ -20,8 +35,20 @@ spec:
     - {{ .host | quote }}
     {{- end }}
   rules:
+    {{- if .Values.ingress.rules }}
+    {{- range .Values.ingress.rules }}
     - backendRefs:
         - name: {{ $fullName }}
           port: {{ $svcPort }}
+      {{- with .matches }}
+      matches:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- end }}
+    {{- else }}
+    - backendRefs:
+        - name: {{ $fullName }}
+          port: {{ $svcPort }}
+    {{- end }}
 {{- end }}
 {{- end }}

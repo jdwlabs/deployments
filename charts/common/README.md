@@ -68,6 +68,12 @@ Notable semantics:
   the Deployment stays byte-identical, leaving pods serving the config they booted with. Only `data` is hashed, so
   chart-version label churn does not cause spurious rollouts. Covers git-sourced config only — out-of-band changes
   such as ExternalSecrets rotation are invisible to a render-time checksum.
+- `ingress.rules` — optional list of HTTPRoute rules, each with an optional `matches` block in Gateway API's own
+  schema. Unset, the route renders one catch-all rule sending the hostname's whole path space to this chart's
+  Service, which is what every chart does today. Set, it lets a chart claim only the paths it serves on a hostname
+  another chart also answers on — the Gateway picks the more specific match, so neither chart has to reference the
+  other. `backendRefs` stays chart-owned rather than per-rule: routing to another workload belongs in that
+  workload's chart, where its Service name is a local fact instead of a string two charts must keep in agreement.
 - `service.targetPort` — optional; when unset the Service targets the named container port `http` (which the shared
   Deployment binds to `service.port`), so both forms hit the same port.
 - `envSecrets` — list of `{secretKey, secretName}` (plus `key`/`property` consumed by per-app ExternalSecret
