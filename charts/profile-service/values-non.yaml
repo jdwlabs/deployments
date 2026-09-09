@@ -1,0 +1,55 @@
+revisionHistoryLimit: 1
+
+image:
+  # Digest-pinned in non as well as prd, which the older charts are not. Those
+  # charts leave the tag empty so the environment follows Chart.appVersion,
+  # which the apps release pipeline bumps on every build. This project has no
+  # update-app target, so nothing bumps appVersion here — an empty tag would
+  # not track new builds, it would just be an unresolved reference to a fixed
+  # version. Once the release pipeline updates this chart, non can move to the
+  # appVersion-tracking form its siblings use.
+  tag: "0.0.3@sha256:00215c3a7d6f08c3bce7eb011639a7d7d6224f2edfae91e4756bf9e83d6b191c"
+
+envs:
+  # The same cluster, database and JDBC URL usersrole reads; the service parses
+  # this form and rewrites it into the libpq URL its driver needs, so one value
+  # feeds the JVM and both Go services through the cutover.
+  UR_PG_DATASOURCE_URL: jdbc:postgresql://platform-postgresql-cluster-non-rw.database:5432/jdwlabs_non
+  # The origin every token is minted from, which this service checks on the way
+  # in. It names the host the API is reached through rather than any one
+  # service, and must stay equal to identity-service's ID_JWT_ISSUER_ORIGIN —
+  # they disagree and every authenticated request here is refused.
+  PS_JWT_ISSUER_ORIGIN: https://usersrole.non.jdwlabs.com
+
+externalSecrets:
+  - refreshInterval: 1m
+    secretStoreName: k8s-secret-store
+    secretName: profile-service-pg-non
+  - refreshInterval: 1m
+    secretStoreName: vault
+    secretName: profile-service-non
+
+# The same underlying keys usersrole reads, not copies of them: the three
+# services verify each other's tokens, so they have to share one signing secret
+# and one database role. A second vault property would refuse every token
+# identity-service mints.
+envSecrets:
+  - secretKey: UR_PG_USERNAME
+    key: platform-postgresql-cluster-non-app
+    property: username
+    secretName: profile-service-pg-non
+  - secretKey: UR_PG_PASSWORD
+    key: platform-postgresql-cluster-non-app
+    property: password
+    secretName: profile-service-pg-non
+  - secretKey: UR_JWT_SECRET_KEY
+    key: usersrole
+    property: jwt_key_non
+    secretName: profile-service-non
+
+# Reloader is installed on this cluster, so this is live rather than an opt-in
+# waiting on it: a rotated signing key or database password restarts the pods
+# instead of leaving them authenticating with a credential the store has
+# already replaced.
+deploymentAnnotations:
+  secret.reloader.stakater.com/reload: "profile-service-pg-non,profile-service-non"
