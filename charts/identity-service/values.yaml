@@ -1,0 +1,133 @@
+# Only applied when autoscaling.enabled is false; while autoscaling is on the
+# HPA owns the replica count and this value is ignored. Kept at 1 so turning
+# autoscaling off never scales the workload to zero by accident.
+replicaCount: 1
+
+# min 1 because the measured request rate for every operation this service
+# takes over is zero: the monolith served 0 business requests over 7 days and 2
+# over 30. max 3 is the ceiling the rest of the fleet uses. The 80% targets are
+# not copied — they are the ones the Go sibling on this cluster runs at, where
+# an identical 32Mi/10m request sits at 12-15% memory and 10% CPU, so the
+# trigger has an order of magnitude of measured headroom underneath it.
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+revisionHistoryLimit: 2
+
+image:
+  repository: jdwlabs/identity-service
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+# The scrape endpoint is on the same http port as the API and under the path
+# the JVM service already serves, so the dashboards and alerts written against
+# http_server_requests_seconds keep selecting the same series once traffic
+# moves rather than going blank at the cutover.
+metrics:
+  enabled: true
+  path: /actuator/prometheus
+  interval: 30s
+
+# Off deliberately. This service runs, is scraped and proves itself healthy
+# while receiving no user traffic; moving traffic is a separate change so it
+# stays small and revertible. The rest of the ingress block — gateway, hosts,
+# rules — lands with that change, so flipping this alone fails at render time
+# rather than publishing a route nobody reviewed.
+ingress:
+  enabled: false
+
+# Anchored on the Go service already running here, measured at 5.16 MiB RSS
+# peak and 0.70 millicores peak against a 32Mi/10m request. This service adds a
+# connection pool and bcrypt, which is what the higher limits cover: bcrypt's
+# per-verification working set and the CPU a sign-in burst asks for.
+resources:
+  requests:
+    memory: "32Mi"
+    cpu: "10m"
+  limits:
+    memory: "128Mi"
+    cpu: "200m"
+
+# Present from the first deploy, before any traffic. A resource change once
+# shipped without one, liveness killed pods mid-boot and it cost roughly ten
+# minutes of production downtime. This binary boots in well under a second, so
+# 12 x 5s is far more budget than it needs — which is the point: an oversized
+# startup budget costs nothing, and the failure it prevents is an outage.
+# Probes the same endpoint liveness does, so a passing startup check means
+# liveness will pass too.
+startupProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+  periodSeconds: 5
+  failureThreshold: 12
+
+# One health route, not the JVM's liveness/readiness split: the Go router
+# matches exact patterns, so /actuator/health/liveness would answer 404 and
+# fail every probe.
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+readinessProbe:
+  httpGet:
+    path: /actuator/health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+volumes: []
+
+volumeMounts: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Both lists are per-environment: their contents are secret names and vault
+# properties that differ in every environment, and Helm replaces lists rather
+# than merging them, so a base entry here would be dead weight at best and a
+# silently-dropped override at worst.
+externalSecrets: []
+
+envSecrets: []
+
+envs:
+  ID_PORT: "8080"
+  # Half the monolith's configured HikariCP maximum of 10, so splitting one
+  # service into two does not raise total connection pressure on the shared
+  # cluster. Still generous against measurement: the monolith peaked at 5 total
+  # connections, 0 active and 0 pending.
+  ID_DB_MAX_CONNECTIONS: "5"
+  ID_DB_MIN_CONNECTIONS: "2"
+  UR_JWT_EXPIRATION_TIME_MS: "7200000"
