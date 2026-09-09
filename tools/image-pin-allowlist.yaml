@@ -78,7 +78,7 @@ exceptions:
     reason: >-
       Helm `test` hook, not a workload. Helm only materialises it on an
       explicit `helm test`, and ArgoCD — which is the only thing that applies
-      these charts — does not create it during sync: all six app charts run in
+      these charts — does not create it during sync: every app chart runs in
       both environments and no `-test-connection` Pod exists anywhere in the
       cluster. The failure mode this check exists to stop therefore cannot
       occur here: nothing pulls this reference on the delivery path, and an
