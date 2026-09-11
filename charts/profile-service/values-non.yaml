@@ -8,7 +8,7 @@ image:
   # not track new builds, it would just be an unresolved reference to a fixed
   # version. Once the release pipeline updates this chart, non can move to the
   # appVersion-tracking form its siblings use.
-  tag: "0.0.3@sha256:00215c3a7d6f08c3bce7eb011639a7d7d6224f2edfae91e4756bf9e83d6b191c"
+  tag: "0.0.4@sha256:6b8bcc15b6dfd496af549776db8bce0f31e58d02e2a336efc38631890569ed44"
 
 envs:
   # The same cluster, database and JDBC URL usersrole reads; the service parses
