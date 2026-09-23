@@ -57,3 +57,24 @@ envSecrets:
 # already replaced.
 deploymentAnnotations:
   secret.reloader.stakater.com/reload: "profile-service-pg-non,profile-service-non"
+
+# Cutover step 1: this service takes /api/profiles on the host usersrole
+# answers on. usersrole keeps its catch-all route, and the Gateway sends a
+# request to the most specific matching rule, so every other path stays on the
+# JVM. Rollback is reverting this block: prune deletes the route and the JVM
+# is still serving the path. Runbook: docs/usersrole-cutover.md.
+ingress:
+  enabled: true
+  gateway:
+    name: platform-gateway
+    namespace: nginx-gateway
+    sectionName: https
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: usersrole.non.jdwlabs.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/profiles
