@@ -14,7 +14,11 @@ envs:
   # in. It names the host the API is reached through rather than any one
   # service, and must stay equal to identity-service's ID_JWT_ISSUER_ORIGIN —
   # they disagree and every authenticated request here is refused.
-  PS_JWT_ISSUER_ORIGIN: https://usersrole.prd.jdwlabs.com
+  # The explicit :443 is deliberate. The JVM builds iss and aud from the
+  # forwarded request URL, and the gateway forwards X-Forwarded-Port, so every
+  # token it mints reads https://usersrole.prd.jdwlabs.com:443. The Go
+  # verifiers compare exactly; without the port they refuse every JVM token.
+  PS_JWT_ISSUER_ORIGIN: https://usersrole.prd.jdwlabs.com:443
 
 externalSecrets:
   - refreshInterval: 1m
