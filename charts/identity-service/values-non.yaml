@@ -20,7 +20,11 @@ envs:
   # through rather than this service's own name, because the routing change
   # puts these operations on that host under their own paths — a token minted
   # before the move must still verify after it.
-  ID_JWT_ISSUER_ORIGIN: https://usersrole.non.jdwlabs.com
+  # The explicit :443 is deliberate. The JVM builds iss and aud from the
+  # forwarded request URL, and the gateway forwards X-Forwarded-Port, so every
+  # token it mints reads https://usersrole.non.jdwlabs.com:443. The Go
+  # verifiers compare exactly; without the port they refuse every JVM token.
+  ID_JWT_ISSUER_ORIGIN: https://usersrole.non.jdwlabs.com:443
 
 externalSecrets:
   - refreshInterval: 1m
