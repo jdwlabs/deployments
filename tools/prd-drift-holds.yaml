@@ -21,7 +21,21 @@
 #       reason: >-
 #         A major behind on purpose ...
 #
-# Nothing is held today. `usersrole` trails by a generation and is the one
-# outstanding promotion the doc names — that is a finding worth seeing, not one
-# worth silencing, so it is left to report.
-holds: []
+# `usersrole` trails by a generation and is the one outstanding promotion the
+# doc names — that is a finding worth seeing, not one worth silencing, so it is
+# left to report.
+holds:
+  - chart: identity-service
+    prdTag: "0.0.3"
+    reason: >-
+      Promoted together with profile-service as part of the prd step of
+      docs/usersrole-cutover.md, not on its own. prd sends these services no
+      traffic until that step, which waits on the prd issuer-origin fix and a
+      synthetic-load plan because prd has no organic API traffic to compare.
+  - chart: profile-service
+    prdTag: "0.0.4"
+    reason: >-
+      Promoted together with identity-service as part of the prd step of
+      docs/usersrole-cutover.md, not on its own. prd sends these services no
+      traffic until that step, which waits on the prd issuer-origin fix and a
+      synthetic-load plan because prd has no organic API traffic to compare.
