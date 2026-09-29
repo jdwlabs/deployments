@@ -82,8 +82,8 @@ hostnames attaches to every host on the listener.
 `tools/cutover-parity.py` runs every profile operation twice, once per
 backend, each with a fresh throwaway user it registers through the JVM, and
 diffs status codes and normalised bodies. It mints tokens through the real
-gateway so `iss` is exactly what browsers get. Do not run it against prd: it
-creates users.
+gateway so `iss` is exactly what browsers get. This default mode registers
+users, so it refuses prd URLs; prd uses the account mode below.
 
 ```sh
 kubectl -n nginx-gateway port-forward svc/platform-gateway-nginx 18443:443 &
@@ -121,7 +121,43 @@ next step. Abort (roll back) on any of:
 
 prd carries almost no organic API traffic: 7 days before step 1, the JVM saw
 445 requests, all `uri=UNKNOWN`. A latency comparison there needs synthetic
-load from a real account, so plan that before step 1 in prd.
+load from a real account.
+
+### Synthetic load (prd)
+
+The same harness with `--account` logs in as one pre-existing test account
+instead of registering users. Create that account once, outside any agent
+session (the password is a credential): `POST /auth/user` on the prd host,
+default role only, no ADMIN, so the admin-only 403 is exercised. Keep the
+credential in Vault and export it only in the shell that runs the load:
+
+```sh
+export PARITY_ACCOUNT_EMAIL=... PARITY_ACCOUNT_PASSWORD=...
+# or --account-file PATH: JSON {"emailAddress": ..., "password": ...}, mode 0600
+```
+
+Each cycle creates the account's profile, exercises all profile operations on
+it, and deletes it. It stops before any write if the profile already exists,
+and deletes it on the way out if a cycle dies midway. `--single` checks one
+backend against the expected status table; response bodies are never printed
+in account mode. Rehearse with `--dry-run` first: it prints the request
+sequence and schedule and sends nothing.
+
+```sh
+# B0 before the step, B1 after it: 1 cycle / 10s for 60 min, cap 360
+python3 tools/cutover-parity.py --env prd --account --single --preset baseline \
+  --csv b0.csv https://usersrole.prd.jdwlabs.com https://usersrole.prd.jdwlabs.com
+# soak canary: 1 cycle / 5 min, cap 600, bounded by a deadline
+python3 tools/cutover-parity.py --env prd --account --single --preset soak \
+  --deadline "$(date -u -d "+48 hours" +%FT%TZ)" --csv soak.csv \
+  https://usersrole.prd.jdwlabs.com https://usersrole.prd.jdwlabs.com
+```
+
+The run exits non-zero after `--max-consecutive-failures` failed cycles in a
+row (default 1): any status off the table, any 5xx, any timeout. The CSV holds
+client-side latency per operation, measured at the same point before and
+after the step, so it is comparable where the two sides' histogram buckets
+are not.
 
 ## Rollback
 
