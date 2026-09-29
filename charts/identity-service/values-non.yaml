@@ -73,3 +73,28 @@ deploymentAnnotations:
 versionRoute:
   enabled: true
   host: identity-service.non.jdwlabs.com
+
+# Cutover step 2: this service takes /api/users and /api/roles on the host
+# usersrole answers on. usersrole keeps its catch-all route, and the Gateway
+# sends a request to the most specific matching rule, so /auth and every other
+# path stay on the JVM. Rollback is reverting this block: prune deletes the
+# route and the JVM is still serving both paths. Runbook:
+# docs/usersrole-cutover.md.
+ingress:
+  enabled: true
+  gateway:
+    name: platform-gateway
+    namespace: nginx-gateway
+    sectionName: https
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: usersrole.non.jdwlabs.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/users
+        - path:
+            type: PathPrefix
+            value: /api/roles
