@@ -18,19 +18,27 @@
     ],
     "ask": [
       "Bash(argocd app sync*)",
+      "Bash(argocd * app sync)",
+      "Bash(argocd * app sync *)",
       "Bash(argocd app delete*)",
+      "Bash(argocd * app delete)",
+      "Bash(argocd * app delete *)",
       "Bash(kubectl apply*)",
+      "Bash(kubectl * apply)",
+      "Bash(kubectl * apply *)",
       "Bash(kubectl delete*)",
-      "Bash(git push*--force)",
-      "Bash(git push*--force *)",
-      "Bash(git push* -f)",
-      "Bash(git push* -f *)",
-      "Bash(git push* +*)",
-      "Bash(git push* main)",
-      "Bash(git push* main *)",
-      "Bash(git push*:main)",
-      "Bash(git push*:main *)",
-      "Bash(git push*refs/heads/main*)"
+      "Bash(kubectl * delete)",
+      "Bash(kubectl * delete *)",
+      "Bash(git *push*--force)",
+      "Bash(git *push*--force *)",
+      "Bash(git *push* -f)",
+      "Bash(git *push* -f *)",
+      "Bash(git *push* +*)",
+      "Bash(git *push* main)",
+      "Bash(git *push* main *)",
+      "Bash(git *push*:main)",
+      "Bash(git *push*:main *)",
+      "Bash(git *push*refs/heads/main*)"
     ]
   }
 }
