@@ -60,7 +60,7 @@ when a concurrent session pushes. The cap is 3 concurrent agentic actors
 
 ## Tooling traps
 
-RTK caching and truncation (`gh pr view` can show a merged PR as `OPEN`),
-`argocd login --core` namespace, Argo CD resource tracking vs `managedFields`,
-index vs child digests, `.imageID` vs `.image`, `gh pr edit` scopes,
-`gh run watch` ids, Windows curl exit codes: `docs/tooling-traps.md`.
+`argocd login --core` namespace and Argo CD resource tracking vs
+`managedFields`: `docs/tooling-traps.md`. Generic tool traps (RTK caching and
+truncation — `gh pr view` can show a merged PR as `OPEN` — digests, `gh`,
+Windows curl): `~/.local/share/chezmoi/docs/agent-tooling-traps.md` (dotfiles).
