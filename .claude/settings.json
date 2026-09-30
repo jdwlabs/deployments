@@ -16,7 +16,7 @@
       "Bash(git add *)",
       "Bash(git commit*)"
     ],
-    "deny": [
+    "ask": [
       "Bash(argocd app sync*)",
       "Bash(argocd app delete*)",
       "Bash(kubectl apply*)",

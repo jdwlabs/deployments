@@ -84,7 +84,8 @@ point the cap can be enforced as code instead of as documented policy.
 ## What this doc does not cover
 
 Per-agent identity and attribution (who opened which PR) are out of scope
-here — that's blocked on per-agent GitHub App identity, not yet landed.
+here. Agent PRs are authored by the shared `jdwlabs-agent-bot` GitHub App,
+which separates agent work from human work but not one agent from another.
 This doc caps *how many* actors may run concurrently; it says nothing about
 *which* actor a given PR came from.
 

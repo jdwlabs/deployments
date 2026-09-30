@@ -10,9 +10,10 @@ This repo is the GitOps delivery layer for the jdwlabs tenant: merging to
 
 ## Hard constraints
 
-- NEVER run `argocd app sync`, `kubectl apply` or `kubectl delete` — Git merge
-  is the only deploy path. Read-only `get`/`describe`/`logs`/`argocd app diff`
-  are fine. (`.claude/settings.json` denies the mutating ones.)
+- Ask the user before `argocd app sync`, `kubectl apply` or `kubectl delete`;
+  Git merge is the deploy path, so prefer a PR. Read-only
+  `get`/`describe`/`logs`/`argocd app diff` are fine. (`.claude/settings.json`
+  makes the mutating ones prompt.)
 - NEVER hand-edit `charts/*/values-prd.yaml`: prd image pins change only via
   PRs opened by the `Promote PRD` workflow (`docs/prd-promotion.md`). Chart
   `version` is for chart packaging changes, never image tags.
