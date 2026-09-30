@@ -1,26 +1,28 @@
-## What
+<!--
+Title: type(scope): description, under 70 chars.
+Keep only sections with content; aim for ~150 words. No file-by-file list,
+restated diff, pasted logs or unticked checkboxes.
+-->
 
-<!-- One sentence: what changed and why -->
+## Why
 
-## Type of change
+<!-- 1-3 sentences: the problem and why this approach. -->
 
-- [ ] `feat` — new service deployment or chart
-- [ ] `fix` — broken manifest or chart template fix
-- [ ] `build` — chart dependency or tooling change
-- [ ] `chore` — maintenance / version bump / config
-- [ ] `ci` — CI/CD pipeline change
-- [ ] `docs` — documentation only
-- [ ] `perf` — performance improvement
-- [ ] `refactor` — restructure, no behavior change
-- [ ] `revert` — revert a previous commit
-- [ ] `style` — formatting / whitespace (no logic change)
-- [ ] `test` — test additions or updates
+## Needs attention
 
-## Checklist
+<!-- - `path:line` - risky or non-obvious spot, and the feedback you want. -->
 
-- [ ] PR title follows conventional commit format: `type(scope): description`
-- [ ] `helm lint charts/<name>` passes after `helm dependency build charts/<name>` (if chart changed)
-- [ ] `helm template` output reviewed (if chart changed)
-- [ ] `argocd app diff` output checked (if application manifest changed)
-- [ ] No secrets or credentials in diff
-- [ ] `targetRevision` is `HEAD` or a semver tag (not a branch)
+## Risk / rollout
+
+<!-- Only if any: breaking value renames, prd changes, manual steps
+(e.g. running .github/rulesets/apply.sh after merge). -->
+
+## Verified
+
+<!--
+- `command actually run` - result
+Chart change: `helm template` per env rendered, one-line summary of what changed.
+App config change: `argocd app diff <app>` summary (read-only).
+-->
+
+<!-- Closes #N / KEY-123 -->
