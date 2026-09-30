@@ -52,11 +52,16 @@ Footers appear after an optional body, separated by a blank line. Common footers
 | `BREAKING CHANGE: <desc>` | Required when a chart change breaks existing deployments or removes a value |
 | `Co-Authored-By: Name <email>` | Credit a co-author (human or AI) |
 
-**AI contributor footer** — include when commits were written with AI assistance:
+**AI contributor trailers** — required on every AI-assisted commit. Name the
+agent and the model that actually ran, never a copied example:
 
 ```
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Assisted-by: Claude Code:claude-opus-5-5
 ```
+
+Codex: `Co-Authored-By: Codex <codex@openai.com>` and `Assisted-by: Codex:<model-id>`.
+PR titles, bodies and comments carry no attribution line or "Generated with" footer.
 
 **Full examples with footers:**
 
@@ -67,7 +72,8 @@ Deploys authui to the jdwlabs namespace via the existing
 frontend Helm chart. targetRevision set to HEAD.
 
 Refs: JDWLABS-22
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Assisted-by: Claude Code:claude-opus-5-5
 ```
 
 ```
@@ -91,7 +97,9 @@ Closes: JDWLABS-80
 1. Branch from `main`: `git checkout -b feat/short-description`
 2. Run `helm lint` and `helm template` before opening PR
 3. PR title must follow conventional commit format
-4. Squash-merge to main — every merge = a deploy
+4. PR body: follow the template, keep only sections with content, ~150 words
+5. Rebase-merge to main (squash and merge commits are disabled) — every commit
+   lands as written, so keep one logical change per commit. Every merge = a deploy
 
 ## Development Setup
 
