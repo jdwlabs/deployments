@@ -90,8 +90,11 @@ This doc caps *how many* actors may run concurrently; it says nothing about
 
 ## Related mechanisms already in force
 
-- **Worktree exclusivity** — "one worktree, one branch, one agent
-  invocation" (see `AGENTS.md`, "Concurrency"). Every actor counted against
+- **Worktree exclusivity** — one worktree, one branch, one agent
+  invocation: never share a worktree between concurrent sessions, and never
+  reuse one for a second, unrelated task once the first is done. Two sessions
+  sharing state is how an unpushed local commit once landed on `main` minutes
+  after another session had pushed, silently. Every actor counted against
   this cap needs its own worktree regardless of the cap; the cap bounds how
   many such worktrees may be active against this repo at once.
 - **Shared-ref `concurrency:` groups** — `promote-prd.yml` (`group:
