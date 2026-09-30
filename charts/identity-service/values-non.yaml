@@ -1,5 +1,18 @@
 revisionHistoryLimit: 1
 
+# Non only for now: prd keeps the base 10m until this has held a day idle and a
+# paced load run here, then the value moves into values.yaml for both.
+# At 10m the HPA scaled to 3 with no traffic. metrics-server never reports less
+# than 1m, so an idle pod reads 10% however little it uses — cadvisor puts it
+# at 0.15m median and 0.19m p99 over 7 days — and a sub-scrape blip of 16-24m
+# was read as 160-240%. At 50m the floor reads 2% and that blip at most 48%, so
+# scaling waits for load that holds near 40m, which leaves room for the bcrypt
+# cost of a sign-in burst. Only the request moves; the map merges with the
+# base, so memory and limits stay.
+resources:
+  requests:
+    cpu: "50m"
+
 image:
   # Digest-pinned in non as well as prd, which the older charts are not. Those
   # charts leave the tag empty so the environment follows Chart.appVersion,
