@@ -76,15 +76,15 @@ Revisit this number, not just re-affirm it, if any of the following happen:
 review turnaround becomes the visible bottleneck at 3 concurrent actors
 (cap is already binding and should probably drop, not rise); a second
 qualified human reviewer starts approving PRs in this repo (changes the
-"single reviewer" premise this rationale rests on); or JDWLABS-307 (GitHub
-App identity) lands and makes per-agent attribution and per-actor throttling
+"single reviewer" premise this rationale rests on); or per-agent GitHub App
+identity lands and makes per-agent attribution and per-actor throttling
 enforceable in CI rather than only at the orchestration layer — at that
 point the cap can be enforced as code instead of as documented policy.
 
 ## What this doc does not cover
 
 Per-agent identity and attribution (who opened which PR) are out of scope
-here — that's blocked on JDWLABS-307 (GitHub App identity), not yet landed.
+here — that's blocked on per-agent GitHub App identity, not yet landed.
 This doc caps *how many* actors may run concurrently; it says nothing about
 *which* actor a given PR came from.
 
