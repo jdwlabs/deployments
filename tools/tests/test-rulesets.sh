@@ -35,7 +35,7 @@ assert_eq "e2e ruleset: only organization admins bypass" \
   "$(jq -c '.bypass_actors' "$E2E" 2>/dev/null)" '[{"actor_id":null,"actor_type":"OrganizationAdmin","bypass_mode":"always"}]'
 
 pattern=$(jq -r '.rules[] | select(.type == "branch_name_pattern") | .parameters.pattern' "$NAMING" 2>/dev/null)
-for good in e2e-test/JDWLABS-671 feat/JDWLABS-671-x chore/x; do
+for good in e2e-test/probe feat/ABC-1-x chore/x; do
   if printf '%s' "$good" | grep -Eq "$pattern"; then ok "naming: '${good}' is allowed"; else no "naming: '${good}' is allowed" "pattern: $pattern"; fi
 done
 for bad in e2e-tests/x wip/x e2e-test; do
