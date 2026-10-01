@@ -91,3 +91,7 @@ ingress:
         - path:
             type: PathPrefix
             value: /api/profiles
+
+versionRoute:
+  enabled: true
+  host: profile-service.non.jdwlabs.com

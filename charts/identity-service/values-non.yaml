@@ -71,3 +71,7 @@ envSecrets:
 # already replaced.
 deploymentAnnotations:
   secret.reloader.stakater.com/reload: "identity-service-pg-non,identity-service-non"
+
+versionRoute:
+  enabled: true
+  host: identity-service.non.jdwlabs.com
