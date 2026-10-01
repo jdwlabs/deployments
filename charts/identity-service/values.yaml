@@ -62,6 +62,12 @@ metrics:
 ingress:
   enabled: false
 
+# GET /actuator/info on a hostname of this service's own, read by the E2E
+# gate's version wait. Off here; only non turns it on.
+versionRoute:
+  enabled: false
+  host: ""
+
 # Anchored on the Go service already running here, measured at 5.16 MiB RSS
 # peak and 0.70 millicores peak against a 32Mi/10m request. This service adds a
 # connection pool and bcrypt, which is what the higher limits cover: bcrypt's

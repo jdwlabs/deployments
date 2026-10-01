@@ -73,6 +73,9 @@ jobs:
             done
           done
 
+      - name: Version route tests
+        run: bash tools/tests/test-version-routes.sh
+
   image-pin-check:
     runs-on: ubuntu-latest
     steps:

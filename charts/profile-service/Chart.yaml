@@ -2,7 +2,7 @@ apiVersion: v2
 name: profile-service
 description: A Helm chart for the Go profile service serving the profiles, addresses and icons operations
 type: application
-version: 0.1.0
+version: 0.2.0
 appVersion: "0.0.6"
 dependencies:
   - name: common
