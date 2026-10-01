@@ -3,17 +3,17 @@
 
 The release pipeline in the apps repo bumps `Chart.yaml` `appVersion` here by
 direct bot commit, which moves non. Nothing moves prd: `values-prd.yaml`
-`image.tag` is written only by the promotion workflow, and that workflow's
-automatic trigger is dormant while E2E is manual-only. So the two files drift
-apart silently, and every signal on the way stays green while they do — the
-release job succeeds, each deliver job succeeds, the chart-bump PR self-merges.
-Nothing in that chain has an opinion about prd, because nothing in that chain
-touches prd.
+`image.tag` is written only by the promotion workflow, and that workflow
+proposes only the charts on its allowlist, which is empty today. So the two
+files drift apart silently, and every signal on the way stays green while they
+do — the release job succeeds, each deliver job succeeds, the chart-bump PR
+self-merges. Nothing in that chain has an opinion about prd, because nothing in
+that chain touches prd.
 
-That is not a miswiring to fix here; the dormant trigger is deliberate and
-documented. The gap is that the resulting distance is invisible. It was found
-once by reading `values-prd.yaml` by hand during an incident, at which point
-prd had been three container versions behind for four days.
+That is not a miswiring to fix here; promotion is a deliberate review. The gap
+is that the resulting distance is invisible. It was found once by reading
+`values-prd.yaml` by hand during an incident, at which point prd had been three
+container versions behind for four days.
 
 Scope — every non-library chart under charts/ is graded, and a chart that
 yields no answer is a failure rather than a silent pass:
