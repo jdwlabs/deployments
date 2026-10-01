@@ -89,3 +89,15 @@ exceptions:
       a chart template would freeze at whatever CVEs it shipped with and
       nothing would ever bump it. Revisit if this Pod ever gains a non-test
       hook annotation or the image starts carrying real diagnostic tooling.
+  - path: charts/identity-service/values-non.yaml
+    ref: jdwlabs/identity-service
+    reason: >-
+      non tracks Chart.appVersion under imagePullPolicy: Always so every
+      release reaches non and the E2E gate can wait for it; a digest pin here
+      would hold non on a fixed build the gate would never test.
+  - path: charts/profile-service/values-non.yaml
+    ref: jdwlabs/profile-service
+    reason: >-
+      non tracks Chart.appVersion under imagePullPolicy: Always so every
+      release reaches non and the E2E gate can wait for it; a digest pin here
+      would hold non on a fixed build the gate would never test.
