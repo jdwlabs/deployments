@@ -164,9 +164,10 @@ the cross-generation verification below still applies; for the other five that
 work is finished, not pending.
 
 `.github/prd-auto-promote` is empty by decision. The `apps-deployed` → E2E →
-`Promote PRD` chain runs live (see [How promotion works](#how-promotion-works)):
-a passing run finds no allowlisted chart and opens nothing, and a failing run
-is visible in the Actions tab and skips `Promote PRD`. Promotion is a
+`Promote PRD` chain is wired (see [How promotion works](#how-promotion-works))
+and takes effect once the `non` environment and its secrets exist. Then a
+passing run finds no allowlisted chart and opens nothing, and a failing run is
+visible in the Actions tab and skips `Promote PRD`. Promotion is a
 `workflow_dispatch` until a chart is added to the allowlist.
 
 ## What the drift check covers
@@ -347,10 +348,10 @@ How a run behaves, for reading a red one:
   the expected-versions file exits 2 instead of being skipped.
 - **Report artifact.** Only `junit.xml` is uploaded (`api-gate-report`, 14
   days), and only after a scan finds no authorization header, bearer or JWT
-  value, or seeded account value (literal or XML-escaped) in it. If the scan matches or errors, the
-  upload is skipped and the step log of the run is the record. Traces and
-  `results.json` are never uploaded, because the repository is public and
-  anyone signed in can download its artifacts.
+  value, or seeded account value (literal or XML-escaped) in it. If the scan
+  matches or errors, the upload is skipped and the step log of the run is the
+  record. Traces and `results.json` are never uploaded, because the repository
+  is public and anyone signed in can download its artifacts.
 
 ## Promotion sequencing
 
@@ -399,8 +400,8 @@ each time about which pairings are safe to split.
 ### Phase 3 — enable steady-state auto-promotion
 
 The E2E trigger chain is wired and takes effect once the `non` environment
-and its secrets exist. When steady-state auto-promotion is decided on, add apps to
-`.github/prd-auto-promote` one at a time — `servicediscovery` first, being
+and its secrets exist. When steady-state auto-promotion is decided on, add
+apps to `.github/prd-auto-promote` one at a time — `servicediscovery` first, being
 decoupled and already level. From then on every passing non E2E run proposes
 at most a one-version step per app, and the review burden per PR is small.
 

@@ -139,6 +139,7 @@ jobs:
           shellcheck -x tools/require-env.sh tools/e2e-expected-versions.sh tools/wait-for-versions.sh
           tools/tests/test-require-env.sh tools/tests/test-e2e-expected-versions.sh
           tools/tests/test-wait-for-versions.sh tools/tests/test-e2e-workflow.sh
+          tools/tests/test-version-routes.sh
       - name: E2E gate tooling tests
         run: |
           bash tools/tests/test-require-env.sh
