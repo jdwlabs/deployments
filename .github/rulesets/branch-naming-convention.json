@@ -21,7 +21,7 @@
       "type": "branch_name_pattern",
       "parameters": {
         "operator": "regex",
-        "pattern": "^(feat|fix|hotfix|release|chore|docs|refactor|test|ci)/.+",
+        "pattern": "^(feat|fix|hotfix|release|chore|docs|refactor|test|ci|e2e-test)/.+",
         "negate": false,
         "name": "Conventional prefixes"
       }
