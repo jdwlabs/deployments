@@ -1,61 +1,187 @@
 name: E2E
 
-# Manual-only: this job needs the self-hosted ARC runner (staging is only
-# reachable from inside the cluster network), and ARC is dormant — CI runs
-# exclusively on GitHub-hosted runners. An automatic trigger would queue
-# forever. Re-enable ARC first (platform OPERATIONS.md "Self-hosted CI
-# runners (ARC)"), then dispatch this manually or restore the
-# repository_dispatch trigger (types: [apps-deployed]).
+# The live gate in front of prd promotion. Every apps release dispatches
+# apps-deployed once its chart bumps have merged here; this waits until non
+# serves those versions, then runs the api-gate suite from the published
+# platform-e2e-api image against the public non hostnames. A success is what
+# fires Promote PRD, which follows this workflow by name - keep it "E2E".
+#
+# GitHub-hosted: non's hostnames are public, and the gate needs nothing
+# inside the cluster.
+#
+# Normal path: repository_dispatch (apps-deployed) and workflow_dispatch, both
+# on main. Branches named e2e-test/* exist only to try a change to this file
+# before it merges, via workflow_dispatch --ref; the non environment allows
+# only main and that pattern, and a ruleset lets only jdwillmsen (and
+# organization admins, through the OrganizationAdmin bypass) push such a
+# branch; the bot cannot. Promote PRD follows only runs on main.
+#
+# The canary input exists to prove the gate can go red on non without
+# touching prd: "version" waits for a build non never serves, "credentials"
+# logs the seeded user in with a wrong password. Both must fail, and a failed
+# run never fires a promotion.
 on:
+  repository_dispatch:
+    types:
+      - apps-deployed
   workflow_dispatch:
     inputs:
-      sha:
-        description: 'apps repo SHA to test (published image tag)'
-        required: true
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  # The apps workspace is wired to Nx Cloud, but this repo has no access
-  # token — run fully local so Nx does not fail trying to authenticate.
-  NX_NO_CLOUD: true
+      canary:
+        description: 'Force a failure to prove the gate can go red (none = a real run)'
+        type: choice
+        options:
+          - none
+          - version
+          - credentials
+        default: none
 
 permissions: {}
 
+# One run at a time against the shared non environment. A running one is never
+# cancelled (that skips teardown and leaves ephemeral users behind), but the
+# group holds at most one queued run: a newer dispatch replaces a pending one.
+# That includes a hand-dispatched canary replacing a pending apps-deployed run,
+# which costs little while the auto-promote list is empty.
+concurrency:
+  group: e2e-non
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
-  platform-e2e:
-    # Staging is only reachable from inside the cluster network, so this must
-    # run on the self-hosted ARC runner rather than a GitHub-hosted one.
-    runs-on: ubuntu-jdwlabs
-    # Bounded so a hung run cannot starve the self-hosted runner queue.
+  api-gate:
+    runs-on: ubuntu-latest
+    # 15 minutes of version wait, the image pull and a ~2 minute suite.
     timeout-minutes: 30
+    environment: non
     permissions:
       contents: read
+    env:
+      # Pinned by index digest: the check that decides promotion must not
+      # change under a republished tag.
+      E2E_IMAGE: ghcr.io/jdwlabs/platform-e2e-api:0.0.1@sha256:68e94bbe287eb0b975b609bc05a2dad76e143a61444f4e80fa070a604a2d6b87
+      CANARY: ${{ inputs.canary || 'none' }}
     steps:
-      - name: Checkout Apps Repo at Published SHA
-        uses: actions/checkout@v7.0.1
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
-          repository: jdwlabs/apps
-          ref: ${{ inputs.sha }}
+          persist-credentials: false
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6.0.10
-
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Run platform-e2e Against Staging
-        run: pnpm exec nx run platform-e2e:e2e
+      - name: Record the trigger
         env:
-          BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+          APPS_SHA: ${{ github.event.client_payload.sha }}
+        run: |
+          {
+            echo "event: ${GITHUB_EVENT_NAME}, canary: ${CANARY}"
+            if [[ "$APPS_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "apps commit: https://github.com/jdwlabs/apps/commit/${APPS_SHA}"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload Playwright Report
-        if: always()
-        uses: actions/upload-artifact@v7.0.1
+      - name: Require the seeded account secrets
+        env:
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+        run: bash tools/require-env.sh E2E_USER_EMAIL E2E_USER_PASSWORD E2E_ADMIN_EMAIL E2E_ADMIN_PASSWORD
+
+      - name: Resolve the versions non should serve
+        run: |
+          bash tools/e2e-expected-versions.sh .github/e2e-version-targets non > "$RUNNER_TEMP/expected.txt"
+          if [ "$CANARY" = "version" ]; then
+            sed -i 's/$/-canary-never-served/' "$RUNNER_TEMP/expected.txt"
+          fi
+          cat "$RUNNER_TEMP/expected.txt"
+
+      - name: Wait for non to serve them
+        # The script's own worst case is its timeout plus one capped fetch.
+        timeout-minutes: 16
+        env:
+          WAIT_TIMEOUT_SECONDS: ${{ inputs.canary == 'version' && '120' || '900' }}
+        run: bash tools/wait-for-versions.sh "$RUNNER_TEMP/expected.txt"
+
+      - name: Run api-gate against non
+        env:
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ inputs.canary == 'credentials' && 'canary-wrong-password' || secrets.E2E_USER_PASSWORD }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          # Prefixes every ephemeral user this run registers, so one left
+          # behind leads back to the run that made it.
+          E2E_RUN_ID: gh-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/e2e-report"
+          # The image runs as its own non-root user, whose uid is not the runner's.
+          chmod 0777 "$RUNNER_TEMP/e2e-report"
+          docker run --rm \
+            -e E2E_PROFILE=non-public \
+            -e E2E_RUN_ID \
+            -e E2E_USER_EMAIL -e E2E_USER_PASSWORD \
+            -e E2E_ADMIN_EMAIL -e E2E_ADMIN_PASSWORD \
+            -v "$RUNNER_TEMP/e2e-report:/e2e/report" \
+            "$E2E_IMAGE"
+
+      # junit.xml only, and only if it is clean. Failure messages and logged
+      # requests can carry an Authorization header or a seeded password, GitHub
+      # masking does not reach artifacts, and this repository's artifacts are
+      # downloadable by anyone signed in.
+      - name: Refuse to publish a report that carries credentials
+        id: scan
+        if: ${{ !cancelled() }}
+        env:
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+        run: |
+          set +x
+          report="$RUNNER_TEMP/e2e-report/junit.xml"
+          [ -f "$report" ] || exit 0
+          secrets_file=$(umask 077 && mktemp "$RUNNER_TEMP/secrets.XXXXXX")
+          trap 'rm -f "$secrets_file"' EXIT
+          # JUnit writers escape XML metacharacters, so a password such as
+          # a&b would sit in the report as a&amp;b and miss a literal match.
+          xml_escape() {
+            sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' \
+              -e 's/"/\&quot;/g' -e "s/'/\&apos;/g"
+          }
+          for value in "$E2E_USER_EMAIL" "$E2E_USER_PASSWORD" "$E2E_ADMIN_EMAIL" "$E2E_ADMIN_PASSWORD"; do
+            [ -n "$value" ] || continue
+            printf '%s\n' "$value"
+            printf '%s\n' "$value" | xml_escape
+          done > "$secrets_file"
+          # grep exits 1 for no match and 2 for an error; only 1 is clean.
+          leak=""
+          rc=0
+          grep -Eiq 'authorization|bearer[[:space:]]+[A-Za-z0-9._-]{16,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}' "$report" || rc=$?
+          if [ "$rc" -eq 0 ]; then
+            leak="a token or an Authorization header"
+          elif [ "$rc" -gt 1 ]; then
+            echo "::error::the credential scan could not read junit.xml (grep exit ${rc})."
+            exit 1
+          elif [ -s "$secrets_file" ]; then
+            rc=0
+            grep -Fq -f "$secrets_file" "$report" || rc=$?
+            if [ "$rc" -eq 0 ]; then
+              leak="a seeded account value"
+            elif [ "$rc" -gt 1 ]; then
+              echo "::error::the credential scan could not read junit.xml (grep exit ${rc})."
+              exit 1
+            fi
+          fi
+          if [ -n "$leak" ]; then
+            rm -f "$report"
+            echo "::warning::junit.xml was not uploaded because it matched ${leak}; read the step log of the gate run instead."
+          fi
+
+      # Fail closed: any error in the scan, not only a match, skips the upload.
+      - name: Upload the gate report
+        if: ${{ !cancelled() && steps.scan.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
-          name: playwright-report
-          path: dist/.playwright/apps/e2e/platform-e2e/
+          name: api-gate-report
+          path: ${{ runner.temp }}/e2e-report/junit.xml
           retention-days: 14
           if-no-files-found: ignore

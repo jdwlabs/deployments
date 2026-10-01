@@ -37,6 +37,9 @@ on:
       - E2E
     types:
       - completed
+    # E2E can be dispatched on a branch; only a run of main's gate promotes.
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       app:

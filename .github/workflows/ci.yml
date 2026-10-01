@@ -134,6 +134,17 @@ jobs:
         run: shellcheck -x tools/tests/test-rulesets.sh
       - name: Ruleset tests
         run: bash tools/tests/test-rulesets.sh
+      - name: Shellcheck the E2E gate tooling
+        run: >-
+          shellcheck -x tools/require-env.sh tools/e2e-expected-versions.sh tools/wait-for-versions.sh
+          tools/tests/test-require-env.sh tools/tests/test-e2e-expected-versions.sh
+          tools/tests/test-wait-for-versions.sh tools/tests/test-e2e-workflow.sh
+      - name: E2E gate tooling tests
+        run: |
+          bash tools/tests/test-require-env.sh
+          bash tools/tests/test-e2e-expected-versions.sh
+          bash tools/tests/test-wait-for-versions.sh
+          bash tools/tests/test-e2e-workflow.sh
 
   validate-config:
     runs-on: ubuntu-latest
