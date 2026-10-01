@@ -1,0 +1,8 @@
+# Services the E2E workflow waits on before running the gate, one
+# "<chart> <info-url>" per line. List every service the api-gate suite sends
+# traffic to on non: a service missing here is tested at whatever version it
+# happens to be running. The Go services answer on hostnames of their own
+# because /actuator/* on the shared API host is the JVM's.
+usersrole https://usersrole.non.jdwlabs.com/actuator/info
+identity-service https://identity-service.non.jdwlabs.com/actuator/info
+profile-service https://profile-service.non.jdwlabs.com/actuator/info
