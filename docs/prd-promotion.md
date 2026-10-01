@@ -24,15 +24,17 @@ with releases whose chart content did not change.
 
 ## How promotion works
 
-1. The apps-repo pipeline releases a project, pushes its image, bumps the
-   chart `appVersion` here (direct bot commit — unchanged, non-only), and
-   dispatches the `apps-deployed` event. (The dispatch is currently a no-op:
-   the `E2E` workflow is manual-only because it needs the dormant self-hosted
-   ARC runner — see the note in `e2e.yml`.)
-2. The `E2E` workflow runs the platform E2E suite against non — today via
-   `workflow_dispatch` with the published apps SHA, once ARC is re-enabled.
-3. On E2E **success**, `Promote PRD` runs (it also supports direct
-   `workflow_dispatch` — the current day-to-day path):
+1. The apps-repo pipeline releases a project, pushes its image, merges the
+   chart `appVersion` bump here (non-only), and dispatches `apps-deployed`.
+2. The `E2E` workflow (`.github/workflows/e2e.yml`, GitHub-hosted) resolves
+   the version each service in `.github/e2e-version-targets` should serve,
+   waits up to 15 minutes for non to serve it, then runs the api-gate suite
+   from the digest-pinned `platform-e2e-api` image against public non. It
+   runs on `main`; a dispatch with `-f canary=version` or
+   `-f canary=credentials` forces a failure to prove the gate can go red.
+3. On E2E **success** of a run on `main`, `Promote PRD` runs (it also
+   supports direct `workflow_dispatch`, the only path that promotes anything
+   today):
    - For every chart listed in [`.github/prd-auto-promote`](../.github/prd-auto-promote)
      whose `appVersion` differs from the pinned prd tag, it opens (or
      force-refreshes) a single-commit PR on branch `chore/promote-<app>-prd`
@@ -161,12 +163,11 @@ behind and needs a promotion of its own. It is also the only chart to which
 the cross-generation verification below still applies; for the other five that
 work is finished, not pending.
 
-`.github/prd-auto-promote` is empty, but that emptiness is not what holds
-auto-promotion back today. The `apps-deployed` → E2E → `Promote PRD` chain
-does not fire at all while the E2E workflow is manual-only (see [How promotion
-works](#how-promotion-works)), so populating the allowlist would change
-nothing until that chain runs. Promotion is a `workflow_dispatch` in the
-meantime.
+`.github/prd-auto-promote` is empty by decision. The `apps-deployed` → E2E →
+`Promote PRD` chain runs live (see [How promotion works](#how-promotion-works)):
+a passing run finds no allowlisted chart and opens nothing, and a failing run
+is visible in the Actions tab and skips `Promote PRD`. Promotion is a
+`workflow_dispatch` until a chart is added to the allowlist.
 
 ## What the drift check covers
 
@@ -283,6 +284,74 @@ promotions at once cancels all but two. A `cancelled` conclusion reads as
 success to anything matching only on `failure`, which is the same way a missed
 promotion hid in the first place. Two files either agree or they do not.
 
+## E2E gate setup (human steps)
+
+The `E2E` workflow reads the GitHub environment `non`. Nothing in this
+repository, and no agent, creates that environment or its secrets: a human does,
+once, in this order. Do the environment before the secrets, so a secret is never
+readable from a branch the policy has not restricted yet. (Merging the workflow
+before this is done is safe: `environment: non` makes GitHub create an empty
+environment on first use, and the run then fails at the secret guard naming
+each missing secret. Still apply the policy below before adding any secret.)
+
+`E2E` runs on `main`: `repository_dispatch` (`apps-deployed`) and
+`workflow_dispatch` are the normal path. Branches named `e2e-test/*` exist only
+to try a workflow change before merge, with
+`gh workflow run E2E -R jdwlabs/deployments --ref e2e-test/<name>`. Only
+`jdwillmsen` and organization admins (the `OrganizationAdmin` bypass) can
+create, update or delete such a branch (the `E2E Test Branches` ruleset), so the
+release bot cannot: pre-merge testing on one is a human action. The ruleset is
+applied by a human with `.github/rulesets/apply.sh` once it has merged. A green
+run on such a branch does not promote anything, because `Promote PRD` follows
+only runs on `main`.
+
+1. Create the environment with a deployment branch policy and no required
+   reviewers:
+
+   ```bash
+   gh api -X PUT repos/jdwlabs/deployments/environments/non --input - <<'JSON'
+   {"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true},"reviewers":[],"wait_timer":0}
+   JSON
+   gh api -X POST repos/jdwlabs/deployments/environments/non/deployment-branch-policies -f name=main -f type=branch
+   gh api -X POST repos/jdwlabs/deployments/environments/non/deployment-branch-policies -f name='e2e-test/*' -f type=branch
+   ```
+
+   `*` in an environment branch pattern does not match `/`, so keep test
+   branch names to one level (`e2e-test/my-change`, not `e2e-test/a/b`).
+2. Create the four seeded-account secrets. `gh` prompts for each value, which
+   keeps it out of the shell history:
+
+   ```bash
+   for s in E2E_USER_EMAIL E2E_USER_PASSWORD E2E_ADMIN_EMAIL E2E_ADMIN_PASSWORD; do
+     gh secret set "$s" --env non -R jdwlabs/deployments
+   done
+   ```
+3. Check the result. None of these commands prints a secret value:
+
+   ```bash
+   gh api repos/jdwlabs/deployments/environments/non --jq '{policy: .deployment_branch_policy, reviewers: [.protection_rules[] | select(.type == "required_reviewers")] | length}'
+   gh api repos/jdwlabs/deployments/environments/non/deployment-branch-policies --jq '.branch_policies[].name'
+   gh secret list --env non -R jdwlabs/deployments
+   ```
+
+   Expected: `custom_branch_policies: true` with `protected_branches: false`,
+   zero required-reviewer rules, the two names `main` and `e2e-test/*`, and the
+   four secret names.
+
+How a run behaves, for reading a red one:
+
+- **Wait step.** `tools/wait-for-versions.sh` polls each target's
+  `/actuator/info` for up to 15 minutes. Each fetch is capped at
+  `FETCH_TIMEOUT_SECONDS` (default 10), so the worst case is the wait plus one
+  fetch cap, and the step carries `timeout-minutes: 16`. A malformed line in
+  the expected-versions file exits 2 instead of being skipped.
+- **Report artifact.** Only `junit.xml` is uploaded (`api-gate-report`, 14
+  days), and only after a scan finds no authorization header, bearer or JWT
+  value, or seeded account value (literal or XML-escaped) in it. If the scan matches or errors, the
+  upload is skipped and the step log of the run is the record. Traces and
+  `results.json` are never uploaded, because the repository is public and
+  anyone signed in can download its artifacts.
+
 ## Promotion sequencing
 
 ### Verification before a cross-generation promotion
@@ -329,7 +398,8 @@ each time about which pairings are safe to split.
 
 ### Phase 3 — enable steady-state auto-promotion
 
-Once the E2E trigger chain is live again, add apps to
+The E2E trigger chain is wired and takes effect once the `non` environment
+and its secrets exist. When steady-state auto-promotion is decided on, add apps to
 `.github/prd-auto-promote` one at a time — `servicediscovery` first, being
 decoupled and already level. From then on every passing non E2E run proposes
 at most a one-version step per app, and the review burden per PR is small.

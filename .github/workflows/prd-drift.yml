@@ -2,13 +2,13 @@ name: prd Drift
 
 # Reports charts whose released appVersion never reached values-prd.yaml.
 #
-# Promotion to prd is a deliberate code-owner review and its automatic trigger
-# is dormant while E2E is manual-only, so a release reaching non and never
-# reaching prd is an expected intermediate state — and an indefinite one, with
-# nothing anywhere that ends it. Every signal on the release path stays green
-# while the gap widens, because none of them touch prd. This job is the missing
-# half: it does not promote anything, it says how far behind prd is and for how
-# long.
+# Promotion to prd is a deliberate code-owner review, and only allowlisted
+# charts get an automatic proposal (none today), so a release reaching non and
+# never reaching prd is an expected intermediate state — and an indefinite one,
+# with nothing anywhere that ends it. Every signal on the release path stays
+# green while the gap widens, because none of them touch prd. This job is the
+# missing half: it does not promote anything, it says how far behind prd is and
+# for how long.
 #
 # Deliberately not a pull-request check. The distance between a chart's
 # appVersion and its prd pin is a property of main, not of a branch, so gating
