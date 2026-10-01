@@ -130,6 +130,10 @@ jobs:
         run: shellcheck -x tools/parse-prd-auto-promote.sh tools/tests/test-parse-prd-auto-promote.sh
       - name: Allowlist parser tests
         run: bash tools/tests/test-parse-prd-auto-promote.sh
+      - name: Shellcheck the ruleset tests
+        run: shellcheck -x tools/tests/test-rulesets.sh
+      - name: Ruleset tests
+        run: bash tools/tests/test-rulesets.sh
 
   validate-config:
     runs-on: ubuntu-latest

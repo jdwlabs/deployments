@@ -394,7 +394,7 @@ merging, not specific to the release path.
 
 ## Why the OrganizationAdmin bypass stays at `always`
 
-All five rulesets in this repository also list `OrganizationAdmin` with
+All six rulesets in this repository also list `OrganizationAdmin` with
 `bypass_mode: always`. That is a different exception from the App's, and it is
 deliberate: it is the break-glass path back into `main` when the gates
 themselves are what is broken — a wedged required check, a ruleset that matches
