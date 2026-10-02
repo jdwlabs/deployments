@@ -1,3 +1,14 @@
+# At 10m the HPA has no headroom over metrics-server's 1m floor: an idle pod
+# reads 10% however little it uses, and a sub-scrape blip of 8-16m reads as
+# 80-160%. prd already scaled out once with only probe and scrape requests
+# arriving, and non held one replica at 50m. prd cadvisor puts this pod at
+# 0.12m median and 0.49m p99 over 7 days, so at 50m the floor reads 2% and
+# scaling waits for load that holds near 40m. Only the request moves; the map
+# merges with the base, so memory and limits stay.
+resources:
+  requests:
+    cpu: "50m"
+
 image:
   # Pinned by index digest, the convention every prd overlay here follows: a
   # republished tag once left nodes serving a build older than the tag claimed,
