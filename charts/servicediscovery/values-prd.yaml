@@ -4,7 +4,7 @@ image:
   # while nodes still held the first build under `IfNotPresent`, so pods served a
   # binary predating the /api/remotes endpoint the container shell calls. The
   # digest makes the pull deterministic regardless of what the tag now points at.
-  tag: "1.2.16@sha256:367a73c38867974c904571877eb4cfcffde583f723dd7727a3f2b7f3f9306b1f"
+  tag: "1.2.17@sha256:01c9269ba0965ac5e49173c3de7f983a76a25ff41aa776a6288b9e45f7dced4e"
 
 ingress:
   hosts:
