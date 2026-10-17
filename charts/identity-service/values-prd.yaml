@@ -14,7 +14,7 @@ image:
   # republished tag once left nodes serving a build older than the tag claimed,
   # under a pull policy that never re-checked. The digest makes the pull
   # deterministic whatever the tag later points at.
-  tag: "0.0.3@sha256:55cfdba09d89033375348c1e05a019f3b25bc216cb9fd87b12b18a0b92c2ff7c"
+  tag: "0.0.7@sha256:e70a3b3d44144957eab47cc9d25bc83cba310ed212d48c1c482e82308df13403"
 
 envs:
   # The same cluster, database and JDBC URL usersrole reads; the service parses
