@@ -1,5 +1,11 @@
 image:
-  tag: "2.0.1"
+  # Digest-pinned: the 2.0.1 tag is squatted — it holds the legacy-generation
+  # build prd runs (backfilled from the archived jdw repo), while the apps repo
+  # has since minted its own authui-2.0.1 release tag whose image was never
+  # delivered. A backfill/deliver run for that version would silently replace
+  # this tag with a different generation; the digest makes the pull immune.
+  # Drop the pin when prd is promoted to a main-line authui build.
+  tag: "2.0.1@sha256:7311af2e1d023669c9f60b45e56f26630d6044a81fc71f597a5226b9f17c3e6c"
 
 resources:
   requests:
