@@ -61,6 +61,11 @@ metrics:
 # rather than publishing a route nobody reviewed.
 ingress:
   enabled: false
+  # Stated here rather than in values-<env> so the route picks it up in every
+  # env the moment ingress turns on. Icon uploads are multipart POSTs to
+  # /api/profiles/{id}/icon; the gateway's own default is 1m. 4m matches
+  # usersrole's and keeps the service's own upload cap the binding limit.
+  maxBodySize: 4m
 
 # GET /actuator/info on a hostname of this service's own, read by the E2E
 # gate's version wait. Off here; only non turns it on.
