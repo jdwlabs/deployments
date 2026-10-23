@@ -1,5 +1,4 @@
-{{- if and .Values.ingress.enabled .Values.ingress.maxBodySize -}}
-{{/*
+{{- /*
 Raises the gateway's client body limit for this route only.
 
 NGINX Gateway Fabric leaves nginx's own `client_max_body_size` default in place
@@ -16,8 +15,11 @@ namespace already satisfies.
 The size is checked here because NGF's CRD accepts at most four digits plus an
 optional k, m or g. A value outside that renders fine and is then refused by the
 API server at sync, which surfaces far from the change that caused it.
-*/}}
-{{- $maxBodySize := toString .Values.ingress.maxBodySize }}
+*/ -}}
+{{- /* Tested for presence rather than truthiness: 0 is falsy, and to NGF it means "no limit", not "unset". */}}
+{{- $rawSize := .Values.ingress.maxBodySize }}
+{{- if and .Values.ingress.enabled (not (kindIs "invalid" $rawSize)) (ne (toString $rawSize) "") }}
+{{- $maxBodySize := toString $rawSize }}
 {{- if not (regexMatch "^[0-9]{1,4}[kmg]?$" $maxBodySize) }}
 {{- fail (printf "ingress.maxBodySize must be up to four digits with an optional k, m or g suffix (e.g. 4m), got %q" $maxBodySize) }}
 {{- end }}
