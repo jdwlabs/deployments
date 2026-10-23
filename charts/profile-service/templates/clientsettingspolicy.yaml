@@ -1,0 +1,32 @@
+{{- if and .Values.ingress.enabled .Values.ingress.maxBodySize -}}
+{{/*
+Raises the gateway's client body limit for this route only.
+
+This route takes /api/profiles, icon uploads included, away from usersrole's
+catch-all on the shared host. The gateway applies the policy attached to the
+route that matched, so the one usersrole carries does not reach these requests,
+and without this one an upload over nginx's 1m default is rejected with a 413
+before it reaches the pod.
+
+The size is checked here because NGF's CRD accepts at most four digits plus an
+optional k, m or g. A value outside that renders fine and is then refused by the
+API server at sync, which surfaces far from the change that caused it.
+*/}}
+{{- $maxBodySize := toString .Values.ingress.maxBodySize }}
+{{- if not (regexMatch "^[0-9]{1,4}[kmg]?$" $maxBodySize) }}
+{{- fail (printf "ingress.maxBodySize must be up to four digits with an optional k, m or g suffix (e.g. 4m), got %q" $maxBodySize) }}
+{{- end }}
+apiVersion: gateway.nginx.org/v1alpha1
+kind: ClientSettingsPolicy
+metadata:
+  name: {{ include "common.fullname" . }}
+  labels:
+    {{- include "common.labels" . | nindent 4 }}
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: {{ include "common.fullname" . }}
+  body:
+    maxSize: {{ $maxBodySize | quote }}
+{{- end }}
