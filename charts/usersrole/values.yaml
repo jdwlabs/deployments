@@ -57,6 +57,11 @@ ingress:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - host: usersrole.default.jdwlabs.com
+  # Profile icon uploads are multipart POSTs to /api/profiles/{id}/icon. The
+  # service caps a file at 2MB and the whole request at 4MB; the gateway's own
+  # default is 1m, which rejected anything larger with a 413 that never reached
+  # the app. Keep this at or above the service's max-request-size.
+  maxBodySize: 4m
 
 resources:
   requests:
