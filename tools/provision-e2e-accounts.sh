@@ -94,5 +94,8 @@ for pair in "$USER_EMAIL:$USER_PW" "$ADMIN_EMAIL:$ADMIN_PW"; do
     || { echo "login failed for ${pair%%:*}" >&2; exit 1; }
 done
 
+# Provisioning is complete; a listing failure below must not tell the operator
+# to delete working accounts.
+CREATED=()
 echo "Done. Secrets now on the non environment:"
-gh secret list --env non -R "$REPO"
+gh secret list --env non -R "$REPO" || echo "could not list secrets; provisioning itself succeeded" >&2
