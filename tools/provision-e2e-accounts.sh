@@ -3,13 +3,15 @@
 # credentials as the `non` environment secrets of jdwlabs/deployments.
 # Run it in your own terminal, not through an agent. It never prints a password.
 set -euo pipefail
+# An inherited `bash -x` or SHELLOPTS=xtrace would echo every expanded password.
+set +x
 
 BASE=https://usersrole.non.jdwlabs.com
 REPO=jdwlabs/deployments
 USER_EMAIL=e2e-seeded-user@example.com
 ADMIN_EMAIL=e2e-seeded-admin@example.com
 DB_NS=database
-DB_POD=platform-postgresql-cluster-non-3
+DB_CLUSTER=platform-postgresql-cluster-non
 DB_NAME=jdwlabs_non
 ADMIN_ROLE_ID=1
 
@@ -30,20 +32,44 @@ post() { # path email password -> http status
     -H 'Content-Type: application/json' --data-binary @- "$BASE$1"
 }
 
+# A failover moves the primary, and the grants below need a writable instance.
+DB_POD=$(kubectl -n "$DB_NS" get cluster.postgresql.cnpg.io "$DB_CLUSTER" \
+  -o jsonpath='{.status.currentPrimary}')
+[ -n "$DB_POD" ] || { echo "could not resolve the $DB_CLUSTER primary" >&2; exit 1; }
+
+# Fail before creating anything if the secrets could not be written afterwards.
+gh secret list --env non -R "$REPO" >/dev/null \
+  || { echo "cannot list secrets on the non environment" >&2; exit 1; }
+
 echo "Checking $BASE is reachable..."
 [ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE/actuator/info")" = 200 ] \
   || { echo "non API not reachable" >&2; exit 1; }
 
-echo "Registering the accounts..."
-for pair in "$USER_EMAIL:$USER_PW" "$ADMIN_EMAIL:$ADMIN_PW"; do
-  email=${pair%%:*}; pw=${pair#*:}
-  code=$(post /auth/user "$email" "$pw")
+# Each password is stored the moment its account exists, so a later failure never
+# leaves a registered account whose password only lived in this process.
+CREATED=()
+report_partial() {
+  local rc=$?
+  if [ "$rc" -ne 0 ] && [ "${#CREATED[@]}" -gt 0 ]; then
+    echo "Failed after registering: ${CREATED[*]}. Their credentials are already in the non environment secrets; delete these accounts before re-running." >&2
+  fi
+}
+trap report_partial EXIT
+
+echo "Registering the accounts and storing their secrets..."
+register() { # email password secret-prefix
+  code=$(post /auth/user "$1" "$2")
   if [ "$code" != 201 ]; then
-    echo "registering $email returned HTTP $code (409 means it already exists)." >&2
-    echo "Nothing was stored. Delete the existing account or pick another address, then re-run." >&2
+    echo "registering $1 returned HTTP $code (409 means it already exists)." >&2
+    echo "Delete the existing account or pick another address, then re-run." >&2
     exit 1
   fi
-done
+  CREATED+=("$1")
+  printf %s "$1" | gh secret set "E2E_$3_EMAIL"    --env non -R "$REPO"
+  printf %s "$2" | gh secret set "E2E_$3_PASSWORD" --env non -R "$REPO"
+}
+register "$USER_EMAIL" "$USER_PW" USER
+register "$ADMIN_EMAIL" "$ADMIN_PW" ADMIN
 
 echo "Granting the admin role to $ADMIN_EMAIL (one auth.users_roles row)..."
 kubectl -n "$DB_NS" exec -i "$DB_POD" -c postgres -- \
@@ -67,12 +93,6 @@ for pair in "$USER_EMAIL:$USER_PW" "$ADMIN_EMAIL:$ADMIN_PW"; do
   [ "$(post /auth/authenticate "${pair%%:*}" "${pair#*:}")" = 200 ] \
     || { echo "login failed for ${pair%%:*}" >&2; exit 1; }
 done
-
-echo "Storing the GitHub environment secrets..."
-printf %s "$USER_EMAIL"  | gh secret set E2E_USER_EMAIL     --env non -R "$REPO"
-printf %s "$USER_PW"     | gh secret set E2E_USER_PASSWORD  --env non -R "$REPO"
-printf %s "$ADMIN_EMAIL" | gh secret set E2E_ADMIN_EMAIL    --env non -R "$REPO"
-printf %s "$ADMIN_PW"    | gh secret set E2E_ADMIN_PASSWORD --env non -R "$REPO"
 
 echo "Done. Secrets now on the non environment:"
 gh secret list --env non -R "$REPO"
