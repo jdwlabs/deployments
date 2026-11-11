@@ -5,15 +5,15 @@ image:
   # tag otherwise leaves nodes serving whatever layer they cached first.
   pullPolicy: Always
 
-# Memory request trimmed 1Gi -> 512Mi -> 384Mi: the seven-day p95 is 296Mi
-# (max 298Mi), so 384Mi keeps ~1.3x headroom while freeing scheduler capacity.
+# Memory request trimmed 1Gi -> 512Mi -> 448Mi: the seven-day p95 is 296Mi
+# (max 298Mi). The HPA scales on 80% of the request, so 448Mi keeps utilisation
+# near 66% and a replica from being added for the sake of a smaller request.
 # Safe only because the startupProbe covers the slow JVM boot window — a prior
 # trim without it let liveness kill pods mid-boot and cause a prod outage.
-# The 2Gi limit is deliberately unchanged (boot-time spike allowance). prd
-# follows in a separate change.
+# The 2Gi limit is deliberately unchanged (boot-time spike allowance).
 resources:
   requests:
-    memory: "384Mi"
+    memory: "448Mi"
     cpu: "500m"
   limits:
     memory: "2Gi"
